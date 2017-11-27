@@ -19,7 +19,6 @@ namespace grtw
 		new ((void*)p) T();
 	}
 
-
 	//destroy
 	template<class T>
 	void destroy(T* p)
