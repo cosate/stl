@@ -123,7 +123,86 @@ namespace grtw
 	}
 
 	template<class Iterator, class Distance>
-	inline void 
+	inline void _distance(Iterator first, Iterator last, Distance& n, input_iterator_tag)
+	{
+		while(first != last)
+		{
+			++first;
+			++n;
+		}
+	}
+
+	template<class Iterator, class Distance>
+	inline void _distance(Iterator first, Iterator last, Distance& n, random_access_iterator_tag)
+	{
+		n += (last - first);
+	}
+
+	template<class Iterator, class Distance>
+	inline void distance(Iterator first, Iterator last, Distance& n)
+	{
+		_distance(first, last, n, iterator_category(first));
+	}
+
+	template<class Iterator>
+	inline typename iterator_traits<Iterator>::difference_type
+	_distance(Iterator first, Iterator last, input_iterator_tag)
+	{
+		typename iterator_traits<Iterator>::difference_type n = 0;
+		while(first != last)
+		{
+			++first;
+			++n;
+		}
+		return n;
+	}
+
+	template<class Iterator>
+	inline typename iterator_traits<Iterator>::difference_type
+	_distance(Iterator first, Iterator last, random_access_iterator_tag)
+	{
+		return last - first;
+	}
+
+	template<class Iterator>
+	inline typename iterator_traits<Iterator>::difference_type
+	distance(Iterator first, Iterator last)
+	{
+		return _distance(first, last, iterator_category(first));
+	}
+
+	template<class Iterator, class Distance>
+	inline void _advance(Iterator& it, Distance n, input_iterator_tag)
+	{
+		while(n--)
+		{
+			++it;
+		}
+	}
+
+	template<class Iterator, class Distance>
+	inline void _advance(Iterator& it, Distance n, bidirectional_iterator_tag)
+	{
+		if(n >= 0)
+			while(n--)
+				++it;
+		else
+			while(n++)
+				--it;
+	}
+
+	template<class Iterator, class Distance>
+	inline void _advance(Iterator& it, Distance n, random_access_iterator_tag)
+	{
+		it += n;
+	}
+
+
+	template<class Iterator, class Distance>
+	inline void advance(Iterator& it, Distance n)
+	{
+		_advance(it, n, iterator_category(it));
+	}
 }
 
 #endif
