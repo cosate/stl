@@ -5,7 +5,14 @@
 
 namespace grtw
 {
-	
+	template<class Iterator>
+	class reverse_iterator
+	{
+	protected:
+		Iterator current;
+	public:
+		using 
+	};
 }
 
 #endif
