@@ -3,7 +3,7 @@
 
 namespace grtw
 {
-	
+	class 
 }
 
 #endif
