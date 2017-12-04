@@ -10,77 +10,85 @@ namespace grtw
 	
 	class malloc_alloc
 	{
-	private:
-		static void* oom_malloc(size_t n)
-		{
-			oomh* my_malloc_alloc_handler;
-			void* res;
+	public:
+		static void* allocate(size_t);
+		static void deallocate(void*, size_t);
+		static void* reallocate(void*, size_t, size_t);
 
-			while(1)
-			{
-				my_malloc_handler = malloc_alloc_oom_handler;
-				if(0 == my_malloc_handler)
-				{
-					throw std::bad_alloc();
-				}
-				(*my_malloc_handler)();
-				res = malloc(n);
-				if(res)
-					return res;
-			}
-		}
-		static void* oom_realloc(void* p, size_t n)
-		{
-			oomh* my_malloc_handler;
-			void* res;
-			while(1)
-			{
-				my_malloc_handler = malloc_alloc_oom_handler;
-				if(0 == my_malloc_handler)
-				{
-					throw std::bad_alloc();
-				}
-				(*my_malloc_handler)();
-				res = realloc(p, n);
-				if(res)
-					return res;
-			}
-		}
+		static oomh* set_malloc_handler(oomh*);
+
+	private:
+		static void* oom_malloc(size_t n);
+		static void* oom_realloc(void* p, size_t n);
 
 		static oomh* malloc_alloc_oom_handler;
-
-	public:
-		static void* allocate(size_t n)
-		{
-			void* res = malloc(n);
-			if(0 == res)
-				res = oom_malloc(n);
-			return res;
-		}
-
-		static void deallocate(void* p, size_t)
-		{
-			free(p);
-		}
-
-		static void* reallocate(void* p, size_t, size_t new_size)
-		{
-			void* res = realloc(p, new_size);
-			if(0 == res)
-				res = oom_realloc(p, new_size);
-			return res;
-		}
-
-		static oomh* set_malloc_handler(oomh* p)
-		{
-			oomh* old = malloc_alloc_oom_handler;
-			malloc_alloc_oom_handler = p;
-			return old;
-		}
 	};
 
-	oomh* malloc_alloc::malloc_alloc_oom_handler = 0;
+	void* malloc_alloc::allocate(size_t n)
+	{
+		void* res = malloc(n);
+		if(0 == res)
+			res = oom_malloc(n);
+		return res;
+	}
 
+	void malloc_alloc::deallocate(void* p, size_t)
+	{
+		free(p);
+	}
+
+	void* malloc_alloc::reallocate(void* p, size_t, size_t new_size)
+	{
+		void* res = realloc(p, new_size);
+		if(0 == res)
+			res = oom_realloc(p, new_size);
+		return res;
+	}
+
+	oomh* malloc_alloc::set_malloc_handler(oomh* p)
+	{
+		oomh* old = malloc_alloc_oom_handler;
+		malloc_alloc_oom_handler = p;
+		return old;
+	}
+
+	void* malloc_alloc::oom_malloc(size_t n)
+	{
+		oomh* my_malloc_alloc_handler;
+		void* res;
+
+		while(1)
+		{
+			my_malloc_handler = malloc_alloc_oom_handler;
+			if(0 == my_malloc_handler)
+			{
+				throw std::bad_alloc();
+			}
+			(*my_malloc_handler)();
+			res = malloc(n);
+			if(res)
+				return res;
+		}
+	}
+	void* malloc_alloc::oom_realloc(void* p, size_t n)
+	{
+		oomh* my_malloc_handler;
+		void* res;
+		while(1)
+		{
+			my_malloc_handler = malloc_alloc_oom_handler;
+			if(0 == my_malloc_handler)
+			{
+				throw std::bad_alloc();
+			}
+			(*my_malloc_handler)();
+			res = realloc(p, n);
+			if(res)
+				return res;
+		}
+	}
+
+	oomh* malloc_alloc::malloc_alloc_oom_handler = 0;
 
 	#define ALIGN 8
 	#define MAX_BYTES 128
@@ -88,6 +96,17 @@ namespace grtw
 
 	class default_alloc
 	{
+	public:
+		static void* allocate(size_t);
+		static void deallocate(void*, size_t);
+		static void* reallocate(void*, size_t, size_t);
+
+	private:
+		static size_t round_up(size_t);
+		static size_t free_list_index(size_t);
+		static void* refill(size_t);
+		static char* chunk_alloc(size_t, int&);
+
 	private:
 		union obj
 		{
@@ -99,18 +118,66 @@ namespace grtw
 		static char* start_free;
 		static char* end_free;
 		static size_t heap_size;
-
-	private:
-		static size_t round_up(size_t);
-		static size_t free_list_index(size_t);
-		static void* refill(size_t);
-		static char* chunk_alloc(size_t, int&);
-
-	public:
-		static void* allocate(size_t);
-		static void deallocate(void*, size_t);
-		static void* reallocate(void*, size_t, size_t);
 	};
+
+	char* default_alloc::start_free = 0;
+	char* default_alloc::end_free = 0;
+	size_t heap_size = 0;
+	default_alloc::obj* default_alloc::free_lists[NFREELISTS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+	size_t default_alloc::round_up(size_t bytes)
+	{
+		return (bytes + ALIGN - 1) &~(ALIGN - 1);
+	}
+
+	size_t default_alloc::free_list_index(size_t bytes)
+	{
+		return ((bytes + ALIGN - 1)/ALIGN - 1);
+	}
+
+	void* default_alloc::allocate(size_t n)
+	{
+		if(n > MAX_BYTES)
+		{
+			return malloc_alloc::allocate(n);
+		}
+
+		int index = free_list_index(n);
+		obj* res = free_lists[index];
+		if(res)
+		{
+			free_lists[index] = res->next;
+			return res;
+		}
+		else
+		{
+			void* r = refill(round_up(n));
+			return r;
+		}
+	}
+
+	void default_alloc::deallocate(void* p, size_t n)
+	{
+		if(n > MAX_BYTES)
+		{
+			free(p);
+			return;
+		}
+		else
+		{
+			int index = free_list_index(n);
+			obj* ptr = static_cast<obj*>p;
+			ptr->next = free_lists[index];
+			free_lists[index] = q;
+		}
+	}
+
+	void* default_alloc::reallocate(void* p, size_t old_size, size_t new_size)
+	{
+		deallocate(p, old_size);
+		p = allocate(new_size);
+		return p;
+	}
 }
 
 #endif
