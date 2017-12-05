@@ -24,12 +24,12 @@ namespace grtw
 		static oomh* malloc_alloc_oom_handler;
 	};
 
-	oomh* malloc_alloc::malloc_alloc_oom_handler = 0;
+	oomh* malloc_alloc::malloc_alloc_oom_handler = nullptr;
 
 	void* malloc_alloc::allocate(size_t n)
 	{
 		void* res = malloc(n);
-		if(0 == res)
+		if(nullptr == res)
 			res = oom_malloc(n);
 		return res;
 	}
@@ -42,7 +42,7 @@ namespace grtw
 	void* malloc_alloc::reallocate(void* p, size_t, size_t new_size)
 	{
 		void* res = realloc(p, new_size);
-		if(0 == res)
+		if(nullptr == res)
 			res = oom_realloc(p, new_size);
 		return res;
 	}
@@ -62,7 +62,7 @@ namespace grtw
 		while(1)
 		{
 			my_malloc_handler = malloc_alloc_oom_handler;
-			if(0 == my_malloc_handler)
+			if(nullptr == my_malloc_handler)
 			{
 				throw std::bad_alloc();
 			}
@@ -79,7 +79,7 @@ namespace grtw
 		while(1)
 		{
 			my_malloc_handler = malloc_alloc_oom_handler;
-			if(0 == my_malloc_handler)
+			if(nullptr == my_malloc_handler)
 			{
 				throw std::bad_alloc();
 			}
@@ -120,10 +120,10 @@ namespace grtw
 		static size_t heap_size;
 	};
 
-	char* default_alloc::start_free = 0;
-	char* default_alloc::end_free = 0;
+	char* default_alloc::start_free = nullptr;
+	char* default_alloc::end_free = nullptr;
 	size_t heap_size = 0;
-	default_alloc::obj* default_alloc::free_lists[NFREELISTS] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+	default_alloc::obj* default_alloc::free_lists[NFREELISTS] = {nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr};
 
 	size_t default_alloc::round_up(size_t bytes)
 	{
@@ -182,11 +182,29 @@ namespace grtw
 	void* default_alloc::refill(size_t n)
 	{
 		int numofobjs = 20;
-		char* res = chunk_alloc(n, numofobjs);
+		char* chunk = chunk_alloc(n, numofobjs);
 		if(numofobjs == 1)
-			return res;
+			return chunk;
 
-
+		obj* res = (obj*)chunk;
+		obj* next_obj = (obj*)(chunk + n);
+		obj* current = next_obj;
+		free_lists[free_list_index(n)] = current;
+		for(int i = 2; i <= numofobjs; i++)
+		{
+			if(i == numofobjs)
+			{
+				current->next = nullptr;
+				break;
+			}
+			else
+			{
+				next_obj = (obj*)((char*)(next_obj) + n);
+				current->next = next_obj;
+				current = next_obj;
+			}
+		}
+		return res;
 	}
 
 	char* default_alloc::chunk_alloc(size_t bytes, int& n)
@@ -214,18 +232,34 @@ namespace grtw
 			size_t byte_to_get = 2 * bytes_required + round_up(heap_size >> 4);
 			if(bytes_left > 0)
 			{
-
+				obj* tmp = free_lists[free_list_index(bytes_left)];
+				((obj*)start_free)->next = tmp;
+				free_lists[free_list_index(bytes_left)] = (obj*)start_free;
 			}
 
 			start_free = (char*)malloc(byte_to_get);
-			if(start_free == 0)
+			if(start_free == nullptr)
 			{
-
+				for(int i = bytes; i <= MAX_BYTES; i+=ALIGN)
+				{
+					int ind = free_list_index(i);
+					if(free_lists[ind] != nullptr)
+					{
+						free_lists[ind] = free_lists[ind]->next;
+						start_free = (char*)p;
+						end_free = start_free + i;
+						return chunk_alloc(bytes, n);
+					}
+				}
+				end_free = nullptr;
+				return NULL;
 			}
-
-			heap_size += byte_to_get;
-			end_free = start_free + byte_to_get;
-			return chunk_alloc(bytes, n);
+			else
+			{
+				heap_size += byte_to_get;
+				end_free = start_free + byte_to_get;
+				return chunk_alloc(bytes, n);
+			}
 		}
 	}
 }

@@ -111,7 +111,7 @@ namespace grtw
 	distance_type(const Iterator&)
 	{
 		using Diff = typename iterator_traits<Iterator>::difference_type*;
-		return static_cast<Diff>(0);
+		return static_cast<Diff>(nullptr);
 	}
 
 	template<class Iterator>
@@ -119,7 +119,7 @@ namespace grtw
 	value_type(const Iterator&)
 	{
 		using Val = typename iterator_traits<Iterator>::value_type*;
-		return static_cast<Val>(0);
+		return static_cast<Val>(nullptr);
 	}
 
 	template<class Iterator, class Distance>
