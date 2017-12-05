@@ -24,6 +24,8 @@ namespace grtw
 		static oomh* malloc_alloc_oom_handler;
 	};
 
+	oomh* malloc_alloc::malloc_alloc_oom_handler = 0;
+
 	void* malloc_alloc::allocate(size_t n)
 	{
 		void* res = malloc(n);
@@ -87,8 +89,6 @@ namespace grtw
 				return res;
 		}
 	}
-
-	oomh* malloc_alloc::malloc_alloc_oom_handler = 0;
 
 	#define ALIGN 8
 	#define MAX_BYTES 128
@@ -177,6 +177,56 @@ namespace grtw
 		deallocate(p, old_size);
 		p = allocate(new_size);
 		return p;
+	}
+
+	void* default_alloc::refill(size_t n)
+	{
+		int numofobjs = 20;
+		char* res = chunk_alloc(n, numofobjs);
+		if(numofobjs == 1)
+			return res;
+
+
+	}
+
+	char* default_alloc::chunk_alloc(size_t bytes, int& n)
+	{
+		char* res;
+		size_t bytes_required = n * bytes;
+		size_t bytes_left = end_free - start_free;
+
+		if(bytes_left >= bytes_required)
+		{
+			res = start_free;
+			start_free += bytes_required;
+			return res;
+		}
+		else if(bytes_left >= bytes)
+		{
+			n = (int)(bytes_left / bytes);
+			bytes_required = n * bytes;
+			res = start_free;
+			start_free += bytes_required;
+			return res;
+		}
+		else
+		{
+			size_t byte_to_get = 2 * bytes_required + round_up(heap_size >> 4);
+			if(bytes_left > 0)
+			{
+
+			}
+
+			start_free = (char*)malloc(byte_to_get);
+			if(start_free == 0)
+			{
+
+			}
+
+			heap_size += byte_to_get;
+			end_free = start_free + byte_to_get;
+			return chunk_alloc(bytes, n);
+		}
 	}
 }
 
