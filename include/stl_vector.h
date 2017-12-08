@@ -22,8 +22,11 @@ namespace grtw
 		using difference_type = ptrdiff_t;
 
 	public:
-		vector();
-		explicit vector(size_type);
+		vector() : start(nullptr), finish(nullptr), end_of_storage(nullptr) {}
+		explicit vector(size_type n)
+		{
+
+		}
 		vector(size_type, const T&);
 		vector(int, const T&);
 		vector(long, const T&);
@@ -42,20 +45,30 @@ namespace grtw
 		iterator end_of_storage;
 
 	public:
-		bool empty();
+		bool empty() const { return start == finish; }
 
-		iterator begin();
-		iterator end();
+		iterator begin() { return start; }
+		iterator end() { return finish; }
+		const_iterator begin() const { return start; }
+		const_iterator end() const { return finish; }
+		const_iterator cbegin() const {return start; }
+		const_iterator cend() const { return finish; }
+		reverse_iterator rbegin() { return reverse_iterator(finish); }
+		reverse_iterator rend() { return reverse_iterator(start); }
+		const_reverse_iterator crbegin() const { return reverse_iterator(finish); }
+		const_reverse_iterator crend() const { return reverse_iterator(start); }
 
-		size_type size();
-		size_type capacity();
+		size_type size() { return finish - start; }
+		size_type capacity() { return end_of_storage - start; }
+		
+		reference operator[](size_type n) { return *(begin() + n); }
+		reference front() { return *begin(); }
+		reference back() { return *(end() - 1); }
+		const_reference front() const { return *cbegin(); }
+		const_reference back() const { return *(cend() - 1); }
+
 		void resize(size_type);
 		void reserve(size_type);
-		
-		reference operator[](size_type);
-		reference front();
-		reference back();
-
 		void push_back();
 		iterator insert(iterator, const T&);
 		iterator insert(iterator, size_type, const T&);
@@ -63,8 +76,7 @@ namespace grtw
 		iterator erase(iterator);
 		iterator erase(iterator, iterator);
 		void clear();
-
-	}
+	};
 }
 
 #endif
