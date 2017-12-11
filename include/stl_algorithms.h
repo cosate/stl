@@ -6,24 +6,20 @@
 
 namespace grtw
 {
-	template<class InputIterator, class ForwardIterator>
-	ForwardIterator copy_aux(InputIterator first, InputIterator last, ForwardIterator dest, true_type)
+	template<class InputIterator, class OutputIterator>
+	OutputIterator copy(InputIterator first, InputIterator last, OutputIterator dest)
 	{
-		memcpy(result, first, sizeof(last - first));
-		return result;
+		return copy_aux(first, last, dest, value_type(first));
 	}
 
-	template<class InputIterator, class ForwardIterator>
-	ForwardIterator copy_aux(InputIterator first, InputIterator last, ForwardIterator dest, false_type)
-	{
-
-	}
-
-	template<class InputIterator, class ForwardIterator>
-	ForwardIterator copy(InputIterator first, InputIterator last, ForwardIterator dest)
+	template<class T>
+	T* copy(T*, T*)
 	{
 		
 	}
+
+	template<class InputIterator, OutputIterator>
+	OutputIterator copy_aux()
 }
 
 #endif
