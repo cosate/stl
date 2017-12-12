@@ -40,7 +40,7 @@ namespace grtw
 	{
 		static OutputIterator copy(InputIterator first, InputIterator last, OutputIterator dest)
 		{
-			using Cat = iterator_traits<Iterator>::iterator_category;
+			using Cat = typename iterator_traits<Iterator>::iterator_category;
 			return __copy(fisrt, last, dest, iterator_category(first));
 		}
 	};
@@ -66,14 +66,122 @@ namespace grtw
 	template<class InputIterator, class OutputIterator>
 	inline OutputIterator copy(InputIterator first, InputIterator last, OutputIterator dest)
 	{
-		using Val = iterator_traits<InputIterator>::value_type;
-		using Triv = type_traits<Val>::has_trivial_assignment_operator;
+		using Val = typename iterator_traits<InputIterator>::value_type;
+		using Triv = typename type_traits<Val>::has_trivial_assignment_operator;
 		return copy_dispatch<InputIterator, OutputIterator, Triv>::copy(first, last, dest);
+	}
+
+	//copy_backward
+	template <class BidirectionalIter1, class BidirectionalIter2>
+	inline BidirectionalIter2 __copy_backward(BidirectionalIter1 first, BidirectionalIter1 last, BidirectionalIter2 dest, bidirectional_iterator_tag)
+	{
+		while (first != last)
+			*--dest = *--last;
+		return dest;
+	}
+
+	template <class RandomAccessIter, class BidirectionalIter>
+	inline BidirectionalIter __copy_backward(RandomAccessIter first, RandomAccessIter last, BidirectionalIter dest, random_access_iterator_tag)
+	{
+		using Dist = typename iterator_traits<RandomAccessIter>::difference_type;
+		for(Dist n = last - first; n > 0; --n)
+			*--dest = *--last;
+		return dest;
+	}
+
+	template <class BidirectionalIter1, class BidirectionalIter2, class BoolType>
+	struct copy_backward_dispatch
+	{
+		using Cat = typename iterator_traits<BidirectionalIter1>::iterator_category;
+		static BidirectionalIter2 copy(BidirectionalIter1 first, BidirectionalIter1 last, BidirectionalIter2 dest)
+		{
+			return __copy_backward(first, last, dest, Cat());
+		}
+	};
+
+	template <class T>
+	struct copy_backward_dispatch<T*, T*, true_type>
+	{
+		static T* copy(const T* first, const T* last, T* dest)
+		{
+			const ptrdiff_t num = last - first;
+			memmove(dest - num, first, sizeof(T) * num);
+			return dest - num;
+		}
+	};
+
+	template <class T>
+	struct copy_backward_dispatch<const T*, T*, true_type>
+	{
+		static T* copy(const T* first, const T* last, T* dest)
+		{
+			return  copy_backward_dispatch<T*, T*, true_type>::copy(first, last, dest);
+		}
+	};
+
+	template <class BI1, class BI2>
+	inline BI2 copy_backward(BI1 first, BI1 last, BI2 dest)
+	{
+		using Val = typename iterator_traits<BI2>::value_type;
+		using Triv = typename type_traits<Val>::has_trivial_assignment_operator;
+		return copy_backward_dispatch<BI1, BI2, Triv>::copy(first, last, dest);
 	}
 
 	//fill
 	template<class ForwardIterator, class T>
-	
+	inline void fill(ForwardIterator first, ForwardIterator last, const T& v)
+	{
+		for(; first != last; ++first)
+			*first = v;
+	}
+
+	inline void fill(unsigned char* first, unsigned char* last, const unsigned char& c)
+	{
+		unsigned char tmp = c;
+		memset(first, tmp, last - first);
+	}
+
+	inline void fill(signed char* first, signed char* last, const signed char& c)
+	{
+  		signed char tmp = c;
+  		memset(first, static_cast<unsigned char>(tmp), last - first);
+  	}
+
+	inline void fill(char* first, char* last, const char& c)
+	{
+  		char tmp = c;
+  		memset(first, static_cast<unsigned char>(tmp), last - first);
+  	}
+
+  	//fill_n
+	template<class OutputIterator, class _Size, class T>
+	inline OutputIterator fill_n(OutputIterator first, _Size n, const T& v)
+	{
+		for(; n > 0; --n, ++first)
+			*first = v;
+		return first;
+	}
+
+	template <class _Size>
+	inline unsigned char* fill_n(unsigned char* first, _Size n, const unsigned char& c)
+	{
+		fill(first, first + n, c);
+		return first + n;
+	}
+
+	template <class _Size>
+	inline signed char* fill_n(char* first, _Size n, const signed char& c)
+	{
+		fill(first, first + n, c);
+		return first + n;
+	}
+
+	template <class _Size>
+	inline char* fill_n(char* first, _Size n, const char& c)
+	{
+		fill(first, first + n, c);
+		return first + n;
+	}
 }
 
 #endif
