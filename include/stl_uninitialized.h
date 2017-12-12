@@ -7,6 +7,21 @@
 
 namespace grtw
 {
+	template<class InputIterator, class ForwardIterator>
+	inline ForwardIterator __uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator dest, true_type)
+	{
+		return copy(first, last, dest);
+	}
+
+	template<class InputIterator, class ForwardIterator>
+	inline ForwardIterator __uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator dest, false_type)
+	{
+		ForwardIterator cur = dest;
+		for(; first != last; ++first, ++cur)
+			construct(&*cur, *first);
+		return cur;
+	}
+	
 	template<class InputIterator, class ForwardIterator, class T>
 	inline ForwardIterator _uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator dest, T*)
 	{

@@ -6,12 +6,12 @@
 
 namespace grtw
 {
+	//copy
 	template<class InputIterator, class OutputIterator>
 	inline OutputIterator __copy(InputIterator first, InputIterator last, OutputIterator dest, input_iterator_tag)
 	{
 		for(; first != last; ++first, ++dest)
 			*dest = *first;
-
 		return dest;
 	}
 
@@ -70,6 +70,10 @@ namespace grtw
 		using Triv = type_traits<Val>::has_trivial_assignment_operator;
 		return copy_dispatch<InputIterator, OutputIterator, Triv>::copy(first, last, dest);
 	}
+
+	//fill
+	template<class ForwardIterator, class T>
+	
 }
 
 #endif
