@@ -2,7 +2,7 @@
 #define GRTW_STL_ALGORITHMS_H
 
 #include"stl_iterator_base.h"
-#include"stl_construct.h"
+#include"type_traits.h"
 
 namespace grtw
 {
@@ -64,7 +64,7 @@ namespace grtw
 	};
 
 	template<class InputIterator, class OutputIterator>
-	OutputIterator copy(InputIterator first, InputIterator last, OutputIterator dest)
+	inline OutputIterator copy(InputIterator first, InputIterator last, OutputIterator dest)
 	{
 		using Val = iterator_traits<InputIterator>::value_type;
 		using Triv = type_traits<Val>::has_trivial_assignment_operator;

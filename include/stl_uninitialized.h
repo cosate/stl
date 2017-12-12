@@ -1,31 +1,35 @@
 #ifndef GRTW_STL_UNINITIALIZED_H
 #define GRTW_STL_UNINITIALIZED_H
 
+#include<cstring>
 #include"stl_algorithm.h"
 #include"type_traits.h"
-#include"stl_iterator.h"
-#include"stl_construct.h"
 
 namespace grtw
 {
-	template<class InputIterator, class ForwardItertor>
-	ForwardItertor uninitialized_copy_aux(InputIterator first, InputIterator last, ForwardItertor dest, true_type)
+	template<class InputIterator, class ForwardIterator, class T>
+	inline ForwardIterator _uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator dest, T*)
 	{
-		return copy(first, last, dest);
+		using IS_POD = type_traits<T>::is_POD_type;
+		return __uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator dest, IS_POD());
 	}
 
-	template<class InputIterator, class ForwardItertor>
-	ForwardItertor uninitialized_copy_aux(InputIterator first, InputIterator last, ForwardItertor dest, false_type)
+	template<class InputIterator, class ForwardIterator>
+	inline ForwardIterator uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator dest)
 	{
-		for(; first != last; first++)
-			;
+		return _uninitialized_copy(first, last, dest, value_type(dest));
 	}
 
-	template<class InputIterator, class ForwardItertor>
-	ForwardItertor uninitialized_copy(InputIterator first, InputIterator last, ForwardItertor dest)
+	inline char* uninitialized_copy(const char* first, const char* last, char* dest)
 	{
-		using is_POD_type = type_traits<first>::is_POD_type;
-		return uninitialized_copy_aux(first, last, dest, is_POD_type())
+		memmove(dest, first, last - first);
+		return dest + (last - first);
+	}
+
+	inline wchar_t* uninitialized_copy(const wchar_t* first, const wchar_t* last, wchar_t* dest)
+	{
+		memmove(dest, first, sizeof(wchar_t)*(last - first));
+		return dest + (last - first);
 	}
 }
 
