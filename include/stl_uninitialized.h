@@ -2,8 +2,8 @@
 #define GRTW_STL_UNINITIALIZED_H
 
 #include<cstring>
-#include"stl_algorithm.h"
-#include"type_traits.h"
+#include"stl_algorithms.h"
+#include"stl_construct.h"
 
 namespace grtw
 {

@@ -3,6 +3,7 @@
 
 #include"stl_iterator.h"
 #include"stl_allocator.h"
+#include"stl_uninitialized.h"
 
 namespace grtw
 {
@@ -21,11 +22,24 @@ namespace grtw
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 
+	private:
+		iterator start;
+		iterator finish;
+		iterator end_of_storage;
+
+	private:
+		void allocate_copy();
+		void allocate_fill(size_t n, )
+		{
+			start = Alloc::allocate(n);
+			uninitialized_fill_n(start, n, )
+		}
+
 	public:
 		vector() : start(nullptr), finish(nullptr), end_of_storage(nullptr) {}
 		explicit vector(size_type n)
 		{
-
+			allocate_fill()
 		}
 		vector(size_type, const T&);
 		vector(int, const T&);
@@ -38,11 +52,6 @@ namespace grtw
 		vector(Iterator, Iterator);
 
 		~vector();
-
-	private:
-		iterator start;
-		iterator finish;
-		iterator end_of_storage;
 
 	public:
 		bool empty() const { return start == finish; }

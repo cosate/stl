@@ -1,6 +1,7 @@
 #ifndef GRTW_STL_ALGORITHMS_H
 #define GRTW_STL_ALGORITHMS_H
 
+#include<cstring>
 #include"stl_iterator_base.h"
 #include"type_traits.h"
 
