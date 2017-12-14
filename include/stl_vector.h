@@ -35,6 +35,7 @@ namespace grtw
 			finish = start + n;
 			end_of_storage = finish;
 		}
+
 	//construct and destruct	
 	public:
 		vector() : start(nullptr), finish(nullptr), end_of_storage(nullptr) {}
@@ -87,7 +88,7 @@ namespace grtw
 					finish = uninitialized_copy(v.begin(), v.end(), start);
 				else
 				{
-					Alloc::deallocate(start, finish);
+					Alloc::deallocate(start, end_of_storage - start);
 					start = Alloc::allocate(n);
 					uninitialized_copy(v.begin(), v.end(), start);
 					finish = start + n;
@@ -127,64 +128,45 @@ namespace grtw
 		const_reference front() const { return *cbegin(); }
 		const_reference back() const { return *(cend() - 1); }
 
-		void resize(size_type);
-		void reserve(size_type);
-		void push_back(const T&);
-		iterator insert(iterator, const T&);
+		void resize(size_type n, const T& v = T())
+		{
+			if(n < size())
+				erase(start + n, finish);
+			else
+				insert(finish, n - size(), v);
+		}
+
+		void reserve(size_type n)
+		{
+			if(n > capacity())
+			{
+				size_type old_size = size();
+				iterator tmp = Alloc::allocate(n);
+				uninitialized_copy(start, finish, tmp);
+				Alloc::destroy(start, finish);
+				Alloc::deallocate(start, end_of_storage - start);
+				start = tmp;
+				finish = start + old_size;
+				end_of_storage = start + n;
+			}
+		}
+
+		void push_back(const T& v)
+		{
+			insert(end(), v);
+		}
+
+		iterator insert(iterator, const T&)
+		{
+			if(iterator < capacity())
+		}
+
 		iterator insert(iterator, size_type, const T&);
 		void pop_back();
 		iterator erase(iterator);
 		iterator erase(iterator, iterator);
 		void clear();
 	};
-
-	template<class T, class Alloc>
-	void vector<T, Alloc>::resize(typename vector<T, Alloc>::size_type n)
-	{
-
-	}
-
-	template<class T, class Alloc>
-	void vector<T, Alloc>::reserve(typename vector<T, Alloc>::size_type n)
-	{
-
-	}
-
-	template<class T, class Alloc>
-	void vector<T, Alloc>::push_back(const T& v)
-	{
-
-	}
-
-	template<class T, class Alloc>
-	typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(typename vector<T, Alloc>::iterator it, const T& v)
-	{
-
-	}
-
-	template<class T, class Alloc>
-	typename vector<T, Alloc>::iterator vector<T, Alloc>::insert(typename vector<T, Alloc>::iterator it, typename vector<T, Alloc>::size_type n, const T& v)
-	{
-
-	}
-
-	template<class T, class Alloc>
-	void vector<T, Alloc>::pop_back()
-	{
-
-	}
-
-	template<class T, class Alloc>
-	typename vector<T, Alloc>::iterator vector<T, Alloc>::erase(typename vector<T, Alloc>::iterator it)
-	{
-
-	}
-
-	template<class T, class Alloc>
-	typename vector<T, Alloc>::iterator vector<T, Alloc>::erase(typename vector<T, Alloc>::iterator first, typename vector<T, Alloc>::iterator last)
-	{
-
-	}
 }
 
 #endif
