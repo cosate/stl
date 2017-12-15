@@ -183,6 +183,12 @@ namespace grtw
 		fill(first, first + n, c);
 		return first + n;
 	}
+
+	template<class T>
+	bool equal(T* first_begin, T* first_end, T* second_begin);
+
+	template<class T>
+	void swap(T t1, T t2);
 }
 
 #endif

@@ -4,6 +4,7 @@
 #include"stl_iterator.h"
 #include"stl_allocator.h"
 #include"stl_uninitialized.h"
+#include"stl_algorithms.h"
 
 namespace grtw
 {
@@ -156,16 +157,126 @@ namespace grtw
 			insert(end(), v);
 		}
 
-		iterator insert(iterator, const T&)
+		iterator insert(iterator it, const T& v)
 		{
-			if(iterator < capacity())
+			size_type n = it - start;
+			if(finish != end_of_storage)
+			{
+				if(it == finish)
+				{
+					construct(finish, v);
+					++finish;
+				}
+				else
+				{
+					construct(finish, *(finish - 1));
+					++finish;
+					copy_backward(it, finish - 2, finish - 1);
+					*it = v;
+				}
+			}
+			else
+			{
+				size_type old_size = size();
+				size_type new_size = old_size == 0 ? 1 : old_size * 2;
+				iterator new_start = Alloc::allocate(new_size);
+				iterator new_finish = new_start;
+				new_finish = uninitialized_copy(start, it, new_start);
+				construct(new_finish, v);
+				++new_finish;
+				new_finish = uninitialized_copy(it, finish, new_finish);
+				destroy(start, finish);
+				Alloc::deallocate(start, end_of_storage - start);
+				start = new_start;
+				finish = new_finish;
+				end_of_storage = start + new_size;
+			}
+			return start + n;
 		}
 
-		iterator insert(iterator, size_type, const T&);
-		void pop_back();
-		iterator erase(iterator);
-		iterator erase(iterator, iterator);
-		void clear();
+		iterator insert(iterator it, size_type n, const T& v)
+		{
+			if(n != 0)
+			{
+				size_type remain = end_of_storage - finish;
+				if(n <= remain)
+				{
+					size_type elems_after = finish - it;
+					iterator old_finish = finish;
+					if(elems_after > n)
+					{
+						uninitialized_copy(finish - n, finish, finish);
+						finish += n;
+						copy_backward(it, old_finish - n, finish);
+						fill(it, it + n, v);
+					}
+					else
+					{
+						uninitialized_fill_n(it, n - elems_after, v);
+						finish += n - elems_after;
+						uninitialized_copy(it, old_finish, finish);
+						finish += elems_after;
+						fill(it, old_finish, v);
+					}
+				}
+				else
+				{
+					size_type old_size = size();
+					size_type new_size = old_size + max(old_size, n);
+					iterator new_start = Alloc::allocate(new_size);
+					iterator new_finish = new_start;
+					new_finish = uninitialized_copy(start, it, new_start);
+					new_finish = uninitialized_fill_n(new_finish, n, v);
+					new_finish = uninitialized_copy(it, finish, new_finish);
+					destroy(start, finish);
+					Alloc::deallocate(start, end_of_storage - start);
+					start = new_start;
+					finish = new_finish;
+					end_of_storage = start + new_size;
+				}
+			}
+		}
+
+		void pop_back()
+		{
+			--finish;
+			destroy(finish);
+		}
+
+		iterator erase(iterator it)
+		{
+			if(it + 1 != finish)
+				copy(it + 1, finish, it);
+			--finish;
+			destroy(finish);
+			return it;
+		}
+
+		iterator erase(iterator first, iterator last)
+		{
+			copy(last, finish, first);
+			iterator new_finish = first + (finish - last);
+			destroy(new_finish, finish);
+			finish = new_finish;
+			return first;
+		}
+
+		void clear()
+		{
+			erase(start, finish);
+		}
+
+		template<class T1, class Alloc1>
+		bool operator==(const vector<T1, Alloc1>& other)
+		{
+			return size() == other.size() && equal(start, finish, other.begin());
+		}
+
+		template<class T1, class Alloc1>
+		bool operator!=(const vector<T1, Alloc1>& other)
+		{
+			return !(this->operator==other);
+		}
 	};
 }
 
