@@ -71,7 +71,7 @@ namespace grtw
 			end_of_storage = finish;
 		}
 
-		vector(iterator first, iterator last)
+		vector(const T* first, const T* last)
 		{
 			size_t n = last - first;
 			start = Alloc::allocate(n);
