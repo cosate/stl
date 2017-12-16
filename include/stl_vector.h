@@ -5,6 +5,7 @@
 #include"stl_allocator.h"
 #include"stl_uninitialized.h"
 #include"stl_algorithms.h"
+#include"type_traits.h"
 
 namespace grtw
 {
@@ -194,7 +195,7 @@ namespace grtw
 			return start + n;
 		}
 
-		iterator insert(iterator it, size_type n, const T& v)
+		void insert(iterator it, size_type n, const T& v)
 		{
 			if(n != 0)
 			{
@@ -230,6 +231,50 @@ namespace grtw
 					new_finish = uninitialized_copy(it, finish, new_finish);
 					destroy(start, finish);
 					Alloc::deallocate(start, end_of_storage - start);
+					start = new_start;
+					finish = new_finish;
+					end_of_storage = start + new_size;
+				}
+			}
+		}
+
+		void insert(iterator it, const_iterator first, const_iterator last)
+		{
+			if(first != last)
+			{
+				size_type n = distance(first, last);
+				size_type remain = end_of_storage - finish;
+				if(remain >= n)
+				{
+					size_type elems_after = finish - it;
+					iterator old_finish = finish;
+					if(elems_after >= n)
+					{
+						uninitialized_copy(old_finish - n, old_finish, old_finish);
+						finish += n;
+						copy_backward(it, old_finish - n, old_finish);
+						copy(first, last, it);
+					}
+					else
+					{
+						uninitialized_copy(first + elems_after, last, finish);
+						finish = finish + n - elems_after;
+						uninitialized_copy(it, old_finish, finish);
+						finish += elems_after;
+						copy(first, first + elems_after, it);
+					}
+				}
+				else
+				{
+					size_type old_size = size();
+					size_type new_size = old_size + max(old_size, n);
+					iterator new_start = Alloc::allocate(new_size);
+					iterator new_finish = new_start;
+					new_finish = uninitialized_copy(start, it, new_start);
+					new_finish = uninitialized_copy(first, last, new_finish);
+					new_finish = uninitialized_copy(it, finish, new_finish);
+					destroy(start, finish);
+					Alloc::deallocate(start);
 					start = new_start;
 					finish = new_finish;
 					end_of_storage = start + new_size;
@@ -275,7 +320,7 @@ namespace grtw
 		template<class T1, class Alloc1>
 		bool operator!=(const vector<T1, Alloc1>& other)
 		{
-			return !(this->operator==other);
+			return !(this->operator==(other));
 		}
 	};
 }

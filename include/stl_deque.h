@@ -3,7 +3,14 @@
 
 namespace grtw
 {
-	
+	template<class T, class Alloc = allocator<T>>
+	class deque
+	{
+	public:
+		deque();
+		~deque();
+		
+	};
 }
 
 #endif

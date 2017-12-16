@@ -185,6 +185,93 @@ namespace grtw
 		using has_trivial_destructor = true_type;
 		using is_POD_type = true_type;
 	};
+
+
+	//Is_integer
+	template <class T>
+	struct Is_integer
+	{
+		using Integral = false_type;
+	};
+
+	template<>
+	struct Is_integer<bool>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<char>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<signed char>
+	{
+		using Integral = true_type;
+	}
+	};
+
+	template<>
+	struct Is_integer<unsigned char>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<wchar_t>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<short>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<unsigned short>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<int>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<unsigned int>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<long>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<unsigned long>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<long long>
+	{
+		using Integral = true_type;
+	};
+
+	template<>
+	struct Is_integer<unsigned long long>
+	{
+		using Integral = true_type;
+	};
 }
 
 #endif

@@ -184,11 +184,63 @@ namespace grtw
 		return first + n;
 	}
 
-	template<class T>
-	bool equal(T* first_begin, T* first_end, T* second_begin);
+	template<class Iterator1, class Iterator2>
+	inline bool equal(Iterator1 start1, Iterator1 end1, Iterator2 start2)
+	{
+		while(start1 != end1)
+		{
+			if(*start1 != *start2)
+				return false;
+			++start1;
+			++start2;
+		}
+		return true;
+	}
+
+	template<class Iterator1, class Iterator2, class Compare>
+	inline bool equal(Iterator1 start1, Iterator1 end1, Iterator2 start2, Compare comp)
+	{
+		while(start1 != end1)
+		{
+			if(!comp(*start1, *start2))
+				return false;
+			++start1;
+			++start2;
+		}
+		return true;
+	}
 
 	template<class T>
-	void swap(T t1, T t2);
+	void swap(T& t1, T& t2)
+	{
+		T tmp = t1;
+		t1 = t2;
+		t2 = tmp;
+	}
+
+	template<class T>
+	const T& max(const T& t1, const T& t2)
+	{
+		return (t1 < t2) ? t2 : t1;
+	}
+
+	template<class T, class Compare>
+	const T& max(const T& t1, const T& t2, Compare comp)
+	{
+		return (comp(t1, t2)) ? t2 : t1;
+	}
+
+	template<class T>
+	const T& min(const T& t1, const T& t2)
+	{
+		return (t1 < t2) ? t1 : t2;
+	}
+
+	template<class T, class Compare>
+	const T& min(const T& t1, const T& t2, Compare comp)
+	{
+		return (comp(t1, t2)) ? t1 : t2;
+	}
 }
 
 #endif
