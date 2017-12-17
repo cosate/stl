@@ -19,6 +19,51 @@ namespace grtw
 			return t1 < t2;
 		}
 	};
+
+	template<class T>
+	struct greater : public binary_function<T, T, bool>
+	{
+		bool operator()(const T& t1, const T& t2) const
+		{
+			return t1 > t2;
+		}
+	};
+
+	template<class T>
+	struct less_equal : public binary_function<T, T, bool>
+	{
+		bool operator()(const T& t1, const T& t2) const
+		{
+			return t1 <= t2;
+		}
+	};
+
+	template<class T>
+	struct greater_equal : public binary_function<T, T, bool>
+	{
+		bool operator()(const T& t1, const T& t2) const
+		{
+			return t1 >= t2;
+		}
+	};
+
+	template<class T>
+	struct equal_to : public binary_function<T, T, bool>
+	{
+		bool operator()(const T& t1, const T& t2) const
+		{
+			return t1 == t2;
+		}
+	};
+
+	template<class T>
+	struct not_equal_to : public binary_function<T, T, bool>
+	{
+		bool operator()(const T& t1, const T& t2) const
+		{
+			return t1 != t2;
+		}
+	};
 }
 
 #endif
