@@ -147,7 +147,7 @@ namespace grtw
 		if(res)
 		{
 			free_lists[index] = res->next;
-			return res;
+			return (void*)res;
 		}
 		else
 		{
@@ -168,7 +168,7 @@ namespace grtw
 			int index = free_list_index(n);
 			obj* ptr = static_cast<obj*>p;
 			ptr->next = free_lists[index];
-			free_lists[index] = q;
+			free_lists[index] = ptr;
 		}
 	}
 
