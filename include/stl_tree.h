@@ -365,11 +365,11 @@ namespace grtw
 				{
 					if(node == pa->right)
 					{
-						rotate_left(pa);
-						node->color = rb_tree_black;
+						node = pa;
+						rotate_left(node);
+						pa = node->parent;
 					}
-					else
-						pa->color = rb_tree_black;
+					pa->color = rb_tree_black;
 					grandpa->color = rb_tree_red;
 					rotate_right(grandpa);
 				}
@@ -388,11 +388,11 @@ namespace grtw
 				{
 					if(node == pa->left)
 					{
-						rotate_right(pa);
-						node->color = rb_tree_black;
+						node = pa;
+						rotate_right(node);
+						pa = node->parent;
 					}
-					else
-						pa->color = rb_tree_black;
+					pa->color = rb_tree_black;
 					grandpa->color = rb_tree_red;
 					rotate_left(grandpa);
 				}
@@ -404,7 +404,71 @@ namespace grtw
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_erase(RBTreeNode<Value>* node)
 	{
-		
+		RBTreeNode<Value>* to_erase = node;
+		if(node->left != nullptr && node->right != nullptr)
+		{
+			typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator it = node;
+			to_erase = (++it).getNative();
+		}
+		RBTreeNode<Value>* to_fillin = nullptr;
+		if(to_erase->left != nullptr)
+			to_fillin = to_erase->left;
+		else
+			to_fillin = to_erase->right;
+
+		if(to_erase != node)
+		{
+			node->left->parent = to_erase;
+			to_erase->left = node->left;
+			if(to_erase != node->right)
+			{
+				if(to_fillin != nullptr)
+					to_fillin->parent = to_erase->parent;
+				to_erase->parent->left = to_fillin;
+				to_erase->right = node->right;
+				node->right->parent = to_erase;
+			}
+			if(node == header->parent)
+				header->parent = to_erase;
+			else
+			{
+				if(node->parent->left == node)
+					node->parent->left = to_erase;
+				else
+					node->parent->right = to_erase;
+			}
+			to_erase->parent = node->parent;
+			to_erase->color = node->color;
+		}
+		else
+		{
+			if(to_fillin != nullptr)
+				to_fillin->parent = to_erase->parent;
+
+			if(to_erase->parent == header)
+				header->parent = to_fillin;
+			else
+			{
+				if(to_erase->parent->left == to_erase)
+					to_erase->parent->left = to_fillin;
+				else
+					to_erase->parent->right = to_fillin;
+			}
+			if(leftmost() == to_erase)
+			{
+				if(to_erase->right == nullptr)
+					header->left = to_erase->parent;
+				else
+					header->left = minimum();
+			}
+			if(rightmost() == to_erase)
+			{
+				if(to_erase->left == nullptr)
+					header->left = to_erase->parent;
+				else
+					header->left = maximum();
+			}
+		}
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
@@ -459,6 +523,13 @@ namespace grtw
 		}
 		const_iterator res = const_iterator(last_greater);
 		return (res == end() || comp(k, getKeyOfValue(res->getNative()))) ? end() : res;
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_unique(const Value& v)
+	{
+
 	}
 }
 
