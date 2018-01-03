@@ -402,73 +402,139 @@ namespace grtw
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
-	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_erase(RBTreeNode<Value>* node)
+	RBTreeNode<Value>* RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_erase(RBTreeNode<Value>* node)
 	{
 		RBTreeNode<Value>* to_erase = node;
-		if(node->left != nullptr && node->right != nullptr)
+		RBTreeNode<Value>* to_fillin = nullptr;
+		RBTreeNode<Value>* to_fillin_parent = node->parent;
+		if(node->left == nullptr && node->right == nullptr)
+		{
+			if(node == header->parent)
+				header->parent = nullptr;
+			else if(node->parent->left == node)
+				node->parent->left = nullptr;
+			else
+				node->parent->right = nullptr;
+		}
+		else if((node->left == nullptr && node->right != nullptr) || (node->left != nullptr && node->right == nullptr))
+		{
+			to_fillin = (node->left == nullptr) ? node->right : node->left;
+			to_fillin->parent = node->parent;
+			if(node == header->parent)
+				header->parent = to_fillin;
+			else if(node->parent->left == node)
+				node->parent->left = to_fillin;
+			else
+				node->parent->right = to_fillin;
+		}
+		else
 		{
 			typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator it = node;
 			to_erase = (++it).getNative();
-		}
-		RBTreeNode<Value>* to_fillin = nullptr;
-		if(to_erase->left != nullptr)
-			to_fillin = to_erase->left;
-		else
 			to_fillin = to_erase->right;
-
-		if(to_erase != node)
-		{
+			to_fillin_parent = to_erase->parent;
 			node->left->parent = to_erase;
 			to_erase->left = node->left;
 			if(to_erase != node->right)
 			{
+				to_erase->parent->left = to_fillin;
 				if(to_fillin != nullptr)
 					to_fillin->parent = to_erase->parent;
-				to_erase->parent->left = to_fillin;
 				to_erase->right = node->right;
 				node->right->parent = to_erase;
 			}
-			if(node == header->parent)
-				header->parent = to_erase;
 			else
-			{
-				if(node->parent->left == node)
-					node->parent->left = to_erase;
-				else
-					node->parent->right = to_erase;
-			}
+				to_fillin_parent = to_erase;
 			to_erase->parent = node->parent;
-			to_erase->color = node->color;
-		}
-		else
-		{
-			if(to_fillin != nullptr)
-				to_fillin->parent = to_erase->parent;
-
-			if(to_erase->parent == header)
-				header->parent = to_fillin;
+			if(node == header-->parent)
+				header->parent = to_erase;
+			else if(node->parent->left == node)
+				node->parent->left = to_erase;
 			else
-			{
-				if(to_erase->parent->left == to_erase)
-					to_erase->parent->left = to_fillin;
-				else
-					to_erase->parent->right = to_fillin;
-			}
-			if(leftmost() == to_erase)
-			{
-				if(to_erase->right == nullptr)
-					header->left = to_erase->parent;
-				else
-					header->left = minimum();
-			}
-			if(rightmost() == to_erase)
-			{
-				if(to_erase->left == nullptr)
-					header->left = to_erase->parent;
-				else
-					header->left = maximum();
-			}
+				node->parent->right = to_erase;
+			swap(to_erase->color, node->color);
+			to_erase = node;
 		}
+		header->left = minimum();
+		header->right = maximum();
+
+		if(to_erase->color == rb_tree_black)
+		{
+			while(to_fillin != header->parent && (to_fillin == nullptr || to_fillin->color != rb_tree_red))
+			{
+				if(to_fillin_parent->left == to_fillin)
+				{
+					if(to_fillin_parent->right->color == rb_tree_red)
+					{
+						to_fillin_parent->color = rb_tree_red;
+						to_fillin_parent->right->color = rb_tree_black;
+						rotate_left(to_fillin_parent);
+					}
+					else
+					{
+						RBTreeNode<Value>* bls = to_fillin_parent->right->left;
+						RBTreeNode<Value>* brs = to_fillin_parent->right->right;
+						if((bls == nullptr || bls->color == rb_tree_black) && (brs == nullptr || brs->color == rb_tree_black))
+						{
+							to_fillin_parent->right->color = rb_tree_red;
+							to_fillin = to_fillin_parent;
+							to_fillin_parent = to_fillin_parent->parent;
+						}
+						else if(bls->color == rb_tree_red && (brs == nullptr || brs->color == rb_tree_black))
+						{
+							bls->color = rb_tree_black;
+							to_fillin_parent->right->color = rb_tree_red;
+							rotate_right(to_fillin_parent->right);
+						}
+						else
+						{
+							to_fillin_parent->right->color = to_fillin_parent->color;
+							to_fillin_parent->color = rb_tree_black;
+							brs->color = rb_tree_black;
+							rotate_left(to_fillin_parent);
+							break;
+						}
+					}
+				}
+				else
+				{
+					if(to_fillin_parent->left->color == rb_tree_red)
+					{
+						to_fillin_parent->color = rb_tree_red;
+						to_fillin_parent->left->color = rb_tree_black;
+						rotate_right(to_fillin_parent);
+					}
+					else
+					{
+						RBTreeNode<Value>* bls = to_fillin_parent->right->left;
+						RBTreeNode<Value>* brs = to_fillin_parent->right->right;
+						if((bls == nullptr || bls->color == rb_tree_black) && (brs == nullptr || brs->color == rb_tree_black))
+						{
+							to_fillin_parent->right->color = rb_tree_red;
+							to_fillin = to_fillin_parent;
+							to_fillin_parent = to_fillin_parent->parent;
+						}
+						else if(brs->color == rb_tree_red && (bls == nullptr || bls->color == rb_tree_black))
+						{
+							brs->color = rb_tree_black;
+							to_fillin_parent->left->color = rb_tree_red;
+							rotate_left(to_fillin_parent->left);
+						}
+						else
+						{
+							to_fillin_parent->left->color = to_fillin_parent->color;
+							to_fillin_parent->color = rb_tree_black;
+							bls->color = rb_tree_black;
+							rotate_right(to_fillin_parent);
+							break;
+						}
+					}
+				}
+			}
+			if(to_fillin != nullptr)
+				to_fillin->color = rb_tree_black;
+		}
+		return to_erase;
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
