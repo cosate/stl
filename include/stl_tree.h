@@ -14,9 +14,8 @@ namespace grtw
 	const RBTreeColorType rb_tree_black = true;
 
 	template<class T>
-	class RBTreeNode
+	struct RBTreeNode
 	{
-	public:
 		T value;
 		RBTreeColorType color;
 		RBTreeNode* parent;
@@ -27,17 +26,19 @@ namespace grtw
 		~RBTreeNode() { destroy(&value); }
 	};
 
-	template<class T>
+	template<class T, class Reference, class Pointer>
 	class RBTree_iterator
 	{
 	public:
 		using iterator_category = bidireactional_iterator_tag;
 		using difference_type = ptrdiff_t;
 		using value_type = T;
-		using reference = T&;
-		using pointer = T*;
+		using reference = Reference;
+		using pointer = Pointer;
 
-		using Self = RBTree_iterator<T>;
+		using Self = RBTree_iterator<T, Reference, Pointer>;
+		using iterator = RBTree_iterator<T, T&, T*>;
+		using const_iterator = RBTree_iterator<T, const T&, const T*>;
 
 	private:
 		RBTreeNode<T>* node;
@@ -47,7 +48,7 @@ namespace grtw
 
 		RBTree_iterator(RBTreeNode<T>* x) : node(x) {}
 
-		RBTree_iterator(const RBTree_iterator<T>& x) : node(x.getNative()) {}
+		RBTree_iterator(const iterator& x) : node(x.getNative()) {}
 
 		RBTreeNode<T>* getNative() { return node; }
 
@@ -55,7 +56,7 @@ namespace grtw
 
 		pointer operator->() const { return &(operator*()); }
 
-		RBTree_iterator& operator=(const RBTree_iterator<T>& other)
+		RBTree_iterator& operator=(const iterator& other)
 		{
 			node = other.node;
 			return *this;
@@ -149,8 +150,8 @@ namespace grtw
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
 
-		using iterator = RBTree_iterator<value_type>;
-		using const_iterator = RBTree_iterator<const value_type>;
+		using iterator = RBTree_iterator<value_type, reference, pointer>;
+		using const_iterator = RBTree_iterator<value_type, const_reference, const_pointer>;
 		using reverse_iterator = reverse_iterator<iterator>;
 		using const_reverse_iterator = reverse_iterator<const_iterator>;
 
@@ -317,10 +318,10 @@ namespace grtw
 
 		~RBTree() { clear(); }
 
-		iterator begin() { return iterator(leftmost()); }
-		iterator end() { return iterator(header); }
-		const_iterator begin() const { return iterator(leftmost()); }
-		const_iterator end() const { return iterator(header); }
+		iterator begin() { return leftmost(); }
+		iterator end() { return header; }
+		const_iterator begin() const { return leftmost(); }
+		const_iterator end() const { return header; }
 		reverse_iterator rbegin() { return reverse_iterator(end()); }
 		reverse_iterator rend() { return reverse_iterator(begin()); }
 		const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
