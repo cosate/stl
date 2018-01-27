@@ -29,6 +29,14 @@ namespace grtw
 		deque_iterator() : first(nullptr), last(nullptr), current(nullptr), node(nullptr) {}
 		deque_iterator(T* x, T** y) : first(*y), last(*y + Nodesize), current(x), node(y) {}
 		deque_iterator(const iterator& x) : first(x.first), last(x.last), current(x.current), node(x.node) {}
+		deque_iterator& operator=(const deque_iterator& other)
+		{
+			first = other.first;
+			last = other.last;
+			current = other.current;
+			node = other.node;
+			return *this;
+		}
 
 		reference operator*() const { return *current; }
 		pointer operator->() const { return current; }
@@ -157,13 +165,13 @@ namespace grtw
 		void create_nodes(T**, T**);
 		void destroy_nodes(T**, T**);
 		void fill_initialize(const value_type&);
-		void check_map_and_realloc_map_if_not_enough_nodes_at_back(size_tye);
+		void check_map_and_realloc_map_if_not_enough_nodes_at_back(size_type);
 		void check_map_and_realloc_map_if_not_enough_nodes_at_front(size_type);
 		void reallocate_map(size_type, bool);
 		iterator insert_aux(iterator, const value_type&);
 		iterator insert_aux(iterator, size_type, const value_type&);
-		void insert_aux(iterator, const value_type*, const value_type*);
-		void insert_aux(iterator, const_iterator, const_iterator);
+		void insert_aux(iterator, const value_type*, const value_type*, size_type);
+		void insert_aux(iterator, const_iterator, const_iterator, size_type);
 
 	public:
 		deque() : node_map(nullptr), map_size(0), start(), finish() { initialize_map(0); }
@@ -247,8 +255,6 @@ namespace grtw
 		size_type size() const { return finish - start; }
 		bool empty() const { return finish == start; }
 
-		void clear() { erase(start, finish); }
-
 		void pop_back();
 		void pop_front();
 
@@ -261,6 +267,7 @@ namespace grtw
 		void resize(size_type);
 		iterator erase(iterator);
 		iterator erase(iterator, iterator);
+		void clear();
 	};
 
 	template<class T, class Node_Alloc, class Map_Alloc>
@@ -474,12 +481,12 @@ namespace grtw
 				for(size_type i = 1; i <= nodes_to_add; ++i)
 					*(start.node - i) = Node_Alloc::allocate(BufferSize());
 			}
-			iterator new_start = start - n;
+			iterator new_start = start - difference_type(n);
 			iterator old_start = start;
 			iterator pos = start + elem_before;
-			if(elem_before >= n)
+			if(elem_before >= difference_type(n))
 			{
-				iterator start_n = start + n;
+				iterator start_n = start + difference_type(n);
 				uninitialized_copy(start, start_n, new_start);
 				copy(start_n, pos, start);
 				start = new_start;
@@ -502,15 +509,15 @@ namespace grtw
 				size_type nodes_to_add = (n - vacancies + BufferSize() - 1) / BufferSize();
 				check_map_and_realloc_map_if_not_enough_nodes_at_back(nodes_to_add);
 				for(int i = 1; i <= nodes_to_add; ++i)
-					*(finish.node + i) = Node_Alloc::allocate(BufferSize())
+					*(finish.node + i) = Node_Alloc::allocate(BufferSize());
 			}
-			iterator new_finish = finish + n;
+			iterator new_finish = finish + difference_type(n);
 			iterator old_finish = finish;
 			const difference_type elem_after = difference_type(size()) - elem_before;
 			iterator pos = finish - elem_after;
 			if(elem_after > difference_type(n))
 			{
-				iterator finish_n = old_finish - n;
+				iterator finish_n = old_finish - difference_type(n);
 				uninitialized_copy(finish_n, old_finish, old_finish);
 				copy_backward(pos, finish_n, old_finish);
 				finish = new_finish;
@@ -530,74 +537,314 @@ namespace grtw
 	template<class T, class Node_Alloc, class Map_Alloc>
 	void deque<T, Node_Alloc, Map_Alloc>::insert(iterator it, const value_type* vfirst, const value_type* vlast)
 	{
+		size_type n = vlast - vfirst;
 		if(it == finish)
 		{
-
+			size_type vacancies = finish.last - finish.current - 1;
+			if(vacancies < n)
+			{
+				size_type nodes_to_add = (n - vacancies + BufferSize() - 1) / BufferSize();
+				check_map_and_realloc_map_if_not_enough_nodes_at_back(nodes_to_add);
+				for(int i = 1; i <= nodes_to_add; ++i)
+					*(finish.node + i) = Node_Alloc::allocate(BufferSize());
+			}
+			iterator new_finish = finish + difference_type(n);
+			uninitialized_copy(vfirst, vlast, finish);
+			finish = new_finish;
 		}
 		else if(it == start)
 		{
-
+			size_type vacancies = start.current - start.first;
+			if(vacancies < n)
+			{
+				size_type nodes_to_add = (n - vacancies + BufferSize() - 1) / BufferSize();
+				check_map_and_realloc_map_if_not_enough_nodes_at_front(nodes_to_add);
+				for(int i = 1; i <= nodes_to_add; ++i)
+					*(start.node - i) = Node_Alloc::allocate(BufferSize());
+			}
+			iterator new_start = start - difference_type(n);
+			uninitialized_copy(vfirst, vlast, new_start);
+			start = new_start;
 		}
 		else
-			insert_aux(it, vfirst, vlast);
+			insert_aux(it, vfirst, vlast, n);
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
-	void deque<T, Node_Alloc, Map_Alloc>::insert_aux(iterator it, const value_type* vfirst, const value_type* vlast)
+	void deque<T, Node_Alloc, Map_Alloc>::insert_aux(iterator it, const value_type* vfirst, const value_type* vlast, size_type n)
 	{
-
+		const difference_type elem_before = it - start;
+		if(elem_before < difference_type(size()/2))
+		{
+			size_type vacancies = start.current - start.first;
+			if(vacancies < n)
+			{
+				size_type nodes_to_add = (n - vacancies + BufferSize() - 1) / BufferSize();
+				check_map_and_realloc_map_if_not_enough_nodes_at_front(nodes_to_add);
+				for(int i = 1; i <= nodes_to_add; ++i)
+					*(start.node - i) = Node_Alloc::allocate(BufferSize());
+			}
+			iterator new_start = start - difference_type(n);
+			iterator old_start = start;
+			iterator pos = start + elem_before;
+			if(elem_before >= difference_type(n))
+			{
+				iterator start_n = old_start + difference_type(n);
+				uninitialized_copy(old_start, start_n, new_start);
+				copy(start_n, pos, old_start);
+				copy(vfirst, vlast, pos - difference_type(n));
+			}
+			else
+			{
+				uninitialized_copy(old_start, pos, new_start);
+				uninitialized_copy(vfirst, vfirst + (difference_type(n) - elem_before), new_start + elem_before);
+				copy(vfirst + (difference_type(n) - elem_before), vlast, old_start);
+			}
+			start = new_start;
+		}
+		else
+		{
+			size_type vacancies = finish.last - finish.current - 1;
+			if(vacancies < n)
+			{
+				size_type nodes_to_add = (n - vacancies + BufferSize() - 1) / BufferSize();
+				check_map_and_realloc_map_if_not_enough_nodes_at_back(nodes_to_add);
+				for(int i = 1; i < nodes_to_add; ++i)
+					*(finish.node + i) = Node_Alloc::allocate(BufferSize());
+			}
+			iterator new_finish = finish + difference_type(n);
+			iterator old_finish = finish;
+			const difference_type elem_after = difference_type(size()) - elem_before;
+			iterator pos = finish - elem_after;
+			if(elem_after > difference_type(n))
+			{
+				iterator finish_n = old_finish - difference_type(n);
+				uninitialized_copy(finish_n, old_finish, old_finish);
+				copy_backward(pos, finish_n, old_finish);
+				copy(vfirst, vlast, pos);
+			}
+			else
+			{
+				uninitialized_copy(pos, old_finish, pos + difference_type(n));
+				copy(vfirst, vfirst + elem_after, pos);
+				uninitialized_copy(vfirst + elem_after, vlast, pos + elem_after);
+			}
+			finish = new_finish;
+		}
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
 	void deque<T, Node_Alloc, Map_Alloc>::insert(iterator it, const_iterator vfirst, const_iterator vlast)
 	{
+		size_type n = vlast - vfirst;
 		if(it == finish)
 		{
-
+			size_type vacancies = finish.last - finish.current - 1;
+			if(vacancies < n)
+			{
+				size_type nodes_to_add = (n - vacancies + BufferSize() - 1) / BufferSize();
+				check_map_and_realloc_map_if_not_enough_nodes_at_back(nodes_to_add);
+				for(int i = 1; i <= nodes_to_add; ++i)
+					*(finish.node + i) = Node_Alloc::allocate(BufferSize());
+			}
+			iterator new_finish = finish + difference_type(n);
+			uninitialized_copy(vfirst, vlast, finish);
+			finish = new_finish;
 		}
 		else if(it == start)
 		{
-
+			size_type vacancies = start.current - start.first;
+			if(vacancies < n)
+			{
+				size_type nodes_to_add = (n - vacancies + BufferSize() - 1) / BufferSize();
+				check_map_and_realloc_map_if_not_enough_nodes_at_front(nodes_to_add);
+				for(int i = 1; i <= nodes_to_add; ++i)
+					*(start.node - i) = Node_Alloc::allocate(BufferSize());
+			}
+			iterator new_start = start - difference_type(n);
+			uninitialized_copy(vfirst, vlast, new_start);
+			start = new_start;
 		}
 		else
-			insert_aux(it, vfirst, vlast);
+			insert_aux(it, vfirst, vlast, n);
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
 	void deque<T, Node_Alloc, Map_Alloc>::insert_aux(iterator it, const_iterator vfirst, const_iterator vlast)
 	{
-
+		const difference_type elem_before = it - start;
+		if(elem_before < difference_type(size()/2))
+		{
+			size_type vacancies = start.current - start.first;
+			if(vacancies < n)
+			{
+				size_type nodes_to_add = (n - vacancies + BufferSize() - 1) / BufferSize();
+				check_map_and_realloc_map_if_not_enough_nodes_at_front(nodes_to_add);
+				for(int i = 1; i <= nodes_to_add; ++i)
+					*(start.node - i) = Node_Alloc::allocate(BufferSize());
+			}
+			iterator new_start = start - difference_type(n);
+			iterator old_start = start;
+			iterator pos = start + elem_before;
+			if(elem_before >= difference_type(n))
+			{
+				iterator start_n = old_start + difference_type(n);
+				uninitialized_copy(old_start, start_n, new_start);
+				copy(start_n, pos, old_start);
+				copy(vfirst, vlast, pos - difference_type(n));
+			}
+			else
+			{
+				uninitialized_copy(old_start, pos, new_start);
+				uninitialized_copy(vfirst, vfirst + (difference_type(n) - elem_before), new_start + elem_before);
+				copy(vfirst + (difference_type(n) - elem_before), vlast, old_start);
+			}
+			start = new_start;
+		}
+		else
+		{
+			size_type vacancies = finish.last - finish.current - 1;
+			if(vacancies < n)
+			{
+				size_type nodes_to_add = (n - vacancies + BufferSize() - 1) / BufferSize();
+				check_map_and_realloc_map_if_not_enough_nodes_at_back(nodes_to_add);
+				for(int i = 1; i < nodes_to_add; ++i)
+					*(finish.node + i) = Node_Alloc::allocate(BufferSize());
+			}
+			iterator new_finish = finish + difference_type(n);
+			iterator old_finish = finish;
+			const difference_type elem_after = difference_type(size()) - elem_before;
+			iterator pos = finish - elem_after;
+			if(elem_after > difference_type(n))
+			{
+				iterator finish_n = old_finish - difference_type(n);
+				uninitialized_copy(finish_n, old_finish, old_finish);
+				copy_backward(pos, finish_n, old_finish);
+				copy(vfirst, vlast, pos);
+			}
+			else
+			{
+				uninitialized_copy(pos, old_finish, pos + difference_type(n));
+				copy(vfirst, vfirst + elem_after, pos);
+				uninitialized_copy(vfirst + elem_after, vlast, pos + elem_after);
+			}
+			finish = new_finish;
+		}
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
 	void deque<T, Node_Alloc, Map_Alloc>::pop_back()
 	{
-
+		if(finish.current != finish.first)
+		{
+			--finish;
+			destroy(finish.current);
+		}
+		else
+		{
+			Node_Alloc::deallocate(finish.first, BufferSize());
+			finish.set_node(finish.node - 1);
+			finish.current = finish.last - 1;
+			destroy(finish.current);
+		}
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
 	void deque<T, Node_Alloc, Map_Alloc>::pop_front()
 	{
-
-	}
-
-	template<class T, class Node_Alloc, class Map_Alloc>
-	void deque<T, Node_Alloc, Map_Alloc>::erase(iterator it)
-	{
-		if(it == finish - 1)
-			pop_back();
-		else if(it == start)
-			pop_front();
+		if(start.current != start.last - 1)
+		{
+			destroy(start.current);
+			++start;
+		}
 		else
 		{
-
+			destroy(start.current);
+			Node_Alloc::deallocate(start.first, BufferSize())
+			start.set_node(start.node + 1);
+			start.current = start.first;
 		}
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
-	void deque<T, Node_Alloc, Map_Alloc>::erase(iterator vfirst, iterator vlast)
+	typename deque<T, Node_Alloc, Map_Alloc>::iterator
+	deque<T, Node_Alloc, Map_Alloc>::erase(iterator it)
 	{
-		
+		difference_type index = it - start;
+		iterator next = it + 1;
+		if(size_type(index) < size()/2)
+		{
+			copy_backward(start, pos, next);
+			pop_front();
+		}
+		else
+		{
+			copy(next, finish, pos);
+			pop_back();
+		}
+		return start + index;
+	}
+
+	template<class T, class Node_Alloc, class Map_Alloc>
+	typename deque<T, Node_Alloc, Map_Alloc>::iterator
+	deque<T, Node_Alloc, Map_Alloc>::erase(iterator vfirst, iterator vlast)
+	{
+		if(vfirst == start && vlast == finish)
+		{
+			clear();
+			return finish;
+		}
+		else
+		{
+			difference_type n = vlast - vfirst;
+			difference_type elem_before = vfirst - start;
+			if(elem_before < difference_type(size() - n/2))
+			{
+				copy_backward(start, vfirst, vlast)
+				iterator new_start = start + n;
+				destroy(start, new_start);
+				destroy_nodes(start.node, new_start.node);
+				start = new_start;
+			}
+			else
+			{
+				copy(vlast, finish, vfirst);
+				iterator new_finish = finish - n;
+				destroy(new_finish, finish);
+				destroy_nodes(new_finish.node + 1, finish.node + 1);
+				finish = new_finish;
+			}
+			return start + elem_before;
+		}
+	}
+
+	template<class T, class Node_Alloc, class Map_Alloc>
+	void deque<T, Node_Alloc, Map_Alloc>::clear()
+	{
+		for(value_type** node = start.node + 1; node < finish.node; ++node)
+		{
+			destroy(*node, *node + BufferSize())
+			Node_Alloc::deallocate(*node, BufferSize());
+		}
+
+		if(start.node != finish.node)
+		{
+			destroy(start.current, start.last);
+			destroy(finish.first, finish.current);
+			Node_Alloc::deallocate(finish.first, BufferSize());
+		}
+		else
+			destroy(start.current, finish.current);
+		finish = start;
+	}
+
+	template<class T, class Node_Alloc, class Map_Alloc>
+	void deque<T, Node_Alloc, Map_Alloc>::resize(size_type new_size)
+	{
+		if(new_size < size())
+			erase(start + new_size, finish);
+		else
+			insert(finish, new_size - size(), value_type());
 	}
 }
 
