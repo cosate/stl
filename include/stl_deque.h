@@ -18,16 +18,16 @@ namespace grtw
 		using reference = Reference;
 		using pointer = Pointer;
 
-		using Self = deque_iterator<T, Reference, Pointer, Nodesize>;
-		using iterator = deque_iterator<T, T&, T*, Nodesize>;
-		using const_iterator = deque_iterator<T, const T&, const T*, Nodesize>;
+		using Self = deque_iterator<value_type, Reference, Pointer, Nodesize>;
+		using iterator = deque_iterator<value_type, value_type&, value_type*, Nodesize>;
+		using const_iterator = deque_iterator<value_type, const value_type&, const value_type*, Nodesize>;
 
-		T* first;
-		T* last;
-		T* current;
-		T** node;
+		value_type* first;
+		value_type* last;
+		value_type* current;
+		value_type** node;
 		deque_iterator() : first(nullptr), last(nullptr), current(nullptr), node(nullptr) {}
-		deque_iterator(T* x, T** y) : first(*y), last(*y + Nodesize), current(x), node(y) {}
+		deque_iterator(value_type* x, value_type** y) : first(*y), last(*y + Nodesize), current(x), node(y) {}
 		deque_iterator(const iterator& x) : first(x.first), last(x.last), current(x.current), node(x.node) {}
 		deque_iterator& operator=(const deque_iterator& other)
 		{
@@ -42,7 +42,7 @@ namespace grtw
 		pointer operator->() const { return current; }
 
 		difference_type operator-(const Self& x) const { return difference_type(Nodesize) * (node - x.node - 1) + (current - first) + (x.last - x.current); }
-		void set_node(T** new_node)
+		void set_node(value_type** new_node)
 		{
 			node = new_node;
 			first = *new_node;
@@ -147,23 +147,23 @@ namespace grtw
 		using difference_type = ptrdiff_t;
 		using size_type = size_t;
 
-		using iterator = deque_iterator<T, reference, pointer, BufferSize()>;
-		using const_iterator = deque_iterator<T, const_reference, const_pointer, BufferSize()>;
+		using iterator = deque_iterator<value_type, reference, pointer, BufferSize()>;
+		using const_iterator = deque_iterator<value_type, const_reference, const_pointer, BufferSize()>;
 		using reverse_iterator = reverse_iterator<iterator>;
 		using const_reverse_iterator = reverse_iterator<const_iterator>;
 
 	private:
-		T** node_map;
-		size_t map_size;
+		value_type** node_map;
+		size_type map_size;
 		iterator start;
 		iterator finish;
 
 	private:
-		static size_t BufferSize() { return (sizeof(T) < 512) ? (512/(sizeof(T))) : size_t(1); }
+		static size_type BufferSize() { return (sizeof(value_type) < 512) ? (512/(sizeof(value_type))) : size_type(1); }
 
 		void initialize_map(size_type);
-		void create_nodes(T**, T**);
-		void destroy_nodes(T**, T**);
+		void create_nodes(value_type**, value_type**);
+		void destroy_nodes(value_type**, value_type**);
 		void fill_initialize(const value_type&);
 		void check_map_and_realloc_map_if_not_enough_nodes_at_back(size_type);
 		void check_map_and_realloc_map_if_not_enough_nodes_at_front(size_type);
@@ -271,13 +271,13 @@ namespace grtw
 	};
 
 	template<class T, class Node_Alloc, class Map_Alloc>
-	void deque<T, Node_Alloc, Map_Alloc>::initialize_map(size_t nelements)
+	void deque<T, Node_Alloc, Map_Alloc>::initialize_map(size_type nelements)
 	{
-		size_t nnodes = nelements/BufferSize() + 1;
+		size_type nnodes = nelements/BufferSize() + 1;
 		map_size = max(8, nnodes + 2);
 		node_map = Map_Alloc::allocate(map_size);
-		T** nstart = node_map + (map_size - nnodes)/2;
-		T** nfinish = nstart + nnodes;
+		value_type** nstart = node_map + (map_size - nnodes)/2;
+		value_type** nfinish = nstart + nnodes;
 		create_nodes(nstart, nfinish);
 		start.set_node(nstart);
 		finish.set_node(nfinish - 1);
@@ -286,33 +286,33 @@ namespace grtw
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
-	void deque<T, Node_Alloc, Map_Alloc>::create_nodes(T** start, T** finish)
+	void deque<T, Node_Alloc, Map_Alloc>::create_nodes(value_type** start, value_type** finish)
 	{
-		for(T** curr = start; curr < finish; ++curr)
+		for(value_type** curr = start; curr < finish; ++curr)
 			*curr = Node_Alloc::allocate(BufferSize());
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
-	void deque<T, Node_Alloc, Map_Alloc>::destroy_nodes(T** start, T** finish)
+	void deque<T, Node_Alloc, Map_Alloc>::destroy_nodes(value_type** start, value_type** finish)
 	{
-		for(T** curr = start; curr < finish; ++curr)
+		for(value_type** curr = start; curr < finish; ++curr)
 			Node_Alloc::deallocate(*curr, BufferSize());
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
-	void deque<T, Node_Alloc, Map_Alloc>::fill_initialize(const T& v)
+	void deque<T, Node_Alloc, Map_Alloc>::fill_initialize(const value_type& v)
 	{
-		for(T** curr = start.node;; curr < finish.node; ++curr)
+		for(value_type** curr = start.node;; curr < finish.node; ++curr)
 			uninitialized_fill(*curr, *curr + BufferSize(), v);
 		uninitialized_fill(finish.first, finish.current, v);
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
-	void deque<T, Node_Alloc, Map_Alloc>::reallocate_map(size_t nodes_to_add, bool add_at_front)
+	void deque<T, Node_Alloc, Map_Alloc>::reallocate_map(size_type nodes_to_add, bool add_at_front)
 	{
-		size_t old_node_nums = finish.node - start.node + 1;
-		size_t new_node_nums = old_node_nums + nodes_to_add;
-		T** new_start;
+		size_type old_node_nums = finish.node - start.node + 1;
+		size_type new_node_nums = old_node_nums + nodes_to_add;
+		value_type** new_start;
 		if(map_size > 2 * new_node_nums)
 		{
 			new_start = node_map + (map_size - new_node_nums)/2 + (add_at_front ? nodes_to_add : 0);
@@ -323,8 +323,8 @@ namespace grtw
 		}
 		else
 		{
-			size_t new_map_size = map_size + max(nodes_to_add, map_size) + 2;
-			T** new_map = Map_Alloc::allocate(new_map_size);
+			size_type new_map_size = map_size + max(nodes_to_add, map_size) + 2;
+			value_type** new_map = Map_Alloc::allocate(new_map_size);
 			new_start = new_map + (new_map_size - new_node_nums)/2 + (add_at_front ? nodes_to_add : 0);
 			copy(start.node, finish.node + 1, new_start);
 			Map_Alloc::deallocate(node_map, map_size);
@@ -379,7 +379,7 @@ namespace grtw
 
 	template<class T, class Node_Alloc, class Map_Alloc>
 	typename deque<T, Node_Alloc, Map_Alloc>::iterator
-	deque<T, Node_Alloc, Map_Alloc>::insert(iterator it, const T& v)
+	deque<T, Node_Alloc, Map_Alloc>::insert(iterator it, const value_type& v)
 	{
 		if(it == finish)
 		{
@@ -399,7 +399,7 @@ namespace grtw
 
 	template<class T, class Node_Alloc, class Map_Alloc>
 	typename deque<T, Node_Alloc, Map_Alloc>::iterator
-	deque<T, Node_Alloc, Map_Alloc>::insert_aux(iterator it, const T& v)
+	deque<T, Node_Alloc, Map_Alloc>::insert_aux(iterator it, const value_type& v)
 	{
 		difference_type index = it - start;
 		value_type v_copy = v;
@@ -427,7 +427,7 @@ namespace grtw
 
 	template<class T, class Node_Alloc, class Map_Alloc>
 	typename deque<T, Node_Alloc, Map_Alloc>::iterator
-	deque<T, Node_Alloc, Map_Alloc>::insert(iterator it, size_type n, const T& v)
+	deque<T, Node_Alloc, Map_Alloc>::insert(iterator it, size_type n, const value_type& v)
 	{
 		if(it == finish)
 		{
@@ -467,7 +467,7 @@ namespace grtw
 
 	template<class T, class Node_Alloc, class Map_Alloc>
 	typename deque<T, Node_Alloc, Map_Alloc>::iterator
-	deque<T, Node_Alloc, Map_Alloc>::insert_aux(iterator it, size_type n, const T& v)
+	deque<T, Node_Alloc, Map_Alloc>::insert_aux(iterator it, size_type n, const value_type& v)
 	{
 		const difference_type elem_before = it - start;
 		value_type v_copy = v;
@@ -670,7 +670,7 @@ namespace grtw
 	}
 
 	template<class T, class Node_Alloc, class Map_Alloc>
-	void deque<T, Node_Alloc, Map_Alloc>::insert_aux(iterator it, const_iterator vfirst, const_iterator vlast)
+	void deque<T, Node_Alloc, Map_Alloc>::insert_aux(iterator it, const_iterator vfirst, const_iterator vlast, size_type n)
 	{
 		const difference_type elem_before = it - start;
 		if(elem_before < difference_type(size()/2))

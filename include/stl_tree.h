@@ -6,6 +6,7 @@
 #include"stl_construct.h"
 #include"stl_function.h"
 #include"stl_iterator.h"
+#include"stl_pair.h"
 
 namespace grtw
 {
@@ -250,7 +251,7 @@ namespace grtw
 			header->right = header;
 		}
 
-		RBTreeNode<value_type>* creater_node(const value_type& v)
+		RBTreeNode<value_type>* create_node(const value_type& v)
 		{
 			RBTreeNode<value_type>* tmp = Alloc::allocate(1);
 			construct(&(tmp->value), v);
@@ -285,6 +286,8 @@ namespace grtw
 		void rebalance_insert(RBTreeNode<value_type>*);
 		void rebalance_erase(RBTreeNode<value_type>*);
 		void copy(RBTreeNode<value_type>*);
+
+		iterator insert(RBTreeNode<value_type>*, RBTreeNode<value_type>*, const value_type&);
 
 	public:
 		RBTree() : header(nullptr), node_count(0), comp()
@@ -330,8 +333,12 @@ namespace grtw
 		bool empty() const { return node_count == 0; }
 		size_type size() const { return node_count; }
 
-		iterator insert_unique(const value_type& v);
 		iterator insert_equal(const value_type& v);
+		iterator insert_equal(const_iterator, const_iterator);
+		iterator insert_equal(const value_type*, const value_type*);
+		pair<iterator, bool> insert_unique(const value_type& v);
+		pair<iterator, bool> insert_unique(const_iterator, const_iterator);
+		pair<iterator, bool> insert_unique(const value_type*, const value_type*);
 		void erase(iterator);
 		void erase(iterator, iterator);
 		void erase(const Key&);
@@ -344,17 +351,17 @@ namespace grtw
 	};
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
-	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_insert(RBTreeNode<Value>* node)
+	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_insert(RBTreeNode<value_type>* node)
 	{
-		RBTreeNode<Value>* root = header->parent;
+		RBTreeNode<value_type>* root = header->parent;
 		node->color = rb_tree_red;
 		while(node != root && node->parent->color == rb_tree_red)
 		{
-			RBTreeNode<Value>* pa = node->parent;
-			RBTreeNode<Value>* grandpa = pa->parent;
+			RBTreeNode<value_type>* pa = node->parent;
+			RBTreeNode<value_type>* grandpa = pa->parent;
 			if(grandpa->left == pa)
 			{
-				RBTreeNode<Value>* unc = grandpa->right;
+				RBTreeNode<value_type>* unc = grandpa->right;
 				if(unc != nullptr && unc->color == rb_tree_red)
 				{
 					pa->color = rb_tree_black;
@@ -377,7 +384,7 @@ namespace grtw
 			}
 			else
 			{
-				RBTreeNode<Value>* unc = grandpa->left;
+				RBTreeNode<value_type>* unc = grandpa->left;
 				if(unc != nullptr && unc->color == rb_tree_red)
 				{
 					pa->color = rb_tree_black;
@@ -403,11 +410,11 @@ namespace grtw
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
-	RBTreeNode<Value>* RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_erase(RBTreeNode<Value>* node)
+	RBTreeNode<Value>* RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_erase(RBTreeNode<value_type>* node)
 	{
-		RBTreeNode<Value>* to_erase = node;
-		RBTreeNode<Value>* to_fillin = nullptr;
-		RBTreeNode<Value>* to_fillin_parent = node->parent;
+		RBTreeNode<value_type>* to_erase = node;
+		RBTreeNode<value_type>* to_fillin = nullptr;
+		RBTreeNode<value_type>* to_fillin_parent = node->parent;
 		if(node->left == nullptr && node->right == nullptr)
 		{
 			if(node == header->parent)
@@ -473,8 +480,8 @@ namespace grtw
 					}
 					else
 					{
-						RBTreeNode<Value>* bls = to_fillin_parent->right->left;
-						RBTreeNode<Value>* brs = to_fillin_parent->right->right;
+						RBTreeNode<value_type>* bls = to_fillin_parent->right->left;
+						RBTreeNode<value_type>* brs = to_fillin_parent->right->right;
 						if((bls == nullptr || bls->color == rb_tree_black) && (brs == nullptr || brs->color == rb_tree_black))
 						{
 							to_fillin_parent->right->color = rb_tree_red;
@@ -507,8 +514,8 @@ namespace grtw
 					}
 					else
 					{
-						RBTreeNode<Value>* bls = to_fillin_parent->right->left;
-						RBTreeNode<Value>* brs = to_fillin_parent->right->right;
+						RBTreeNode<value_type>* bls = to_fillin_parent->right->left;
+						RBTreeNode<value_type>* brs = to_fillin_parent->right->right;
 						if((bls == nullptr || bls->color == rb_tree_black) && (brs == nullptr || brs->color == rb_tree_black))
 						{
 							to_fillin_parent->right->color = rb_tree_red;
@@ -543,7 +550,7 @@ namespace grtw
 	{
 		if(node_count != 0)
 		{
-			RBTreeNode<Value>* root = header->parent;
+			RBTreeNode<value_type>* root = header->parent;
 			clear(root);
 			header->left = header;
 			header->right = header;
@@ -556,8 +563,8 @@ namespace grtw
 	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator
 	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::find(const Key& k)
 	{
-		RBTreeNode<Value>* curr = header->parent;
-		RBTreeNode<Value>* last_greater = header;
+		RBTreeNode<value_type>* curr = header->parent;
+		RBTreeNode<value_type>* last_greater = header;
 		while(curr != nullptr)
 		{
 			if(comp(getKeyOfValue(curr), k))
@@ -576,8 +583,8 @@ namespace grtw
 	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::const_iterator
 	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::find(const Key& k) const
 	{
-		RBTreeNode<Value>* curr = header->parent;
-		RBTreeNode<Value>* last_greater = header;
+		RBTreeNode<value_type>* curr = header->parent;
+		RBTreeNode<value_type>* last_greater = header;
 		while(curr != nullptr)
 		{
 			if(comp(getKeyOfValue(curr), k))
@@ -594,9 +601,41 @@ namespace grtw
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator
-	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_unique(const Value& v)
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert(RBTreeNode<value_type>* add_here, RBTreeNode<value_type>* its_parent, const value_type& v)
 	{
+		if(its_parent == header || add_here != nullptr || )
+	}
 
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_equal(const value_type& v)
+	{
+		RBTreeNode<value_type>* p = header;
+		RBTreeNode<value_type>* c = p->parent;
+		while(c != nullptr)
+		{
+			p = c;
+			c = comp(KeyOfValue()(v), getKeyOfValue(c)) ? c->left : c->right;
+		}
+		return insert(c, p, v);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	pair<typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator, bool>
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_unique(const value_type& v)
+	{
+		RBTreeNode<value_type>* p = header;
+		RBTreeNode<value_type>* c = header->parent;
+		while(c != nullptr)
+		{
+			p = c;
+			c = comp(KeyOfValue()(v), getKeyOfValue(c)) ? c->left : c->right;
+		}
+		iterator it = iterator(p);
+		if(comp(KeyOfValue()(v), getKeyOfValue(p)))
+		{
+			return pair<iterator, bool>(insert(c, p, v), true);
+		}
 	}
 }
 
