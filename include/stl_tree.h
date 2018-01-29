@@ -260,7 +260,7 @@ namespace grtw
 
 		RBTreeNode<value_type>* clone_node(RBTreeNode<value_type>* other)
 		{
-			RBTreeNode<value_type>* tmp = creater_node(other->value);
+			RBTreeNode<value_type>* tmp = create_node(other->value);
 			tmp->color = other->color;
 			tmp->left = other->left;
 			tmp->right = other->right;
@@ -285,9 +285,9 @@ namespace grtw
 
 		void rebalance_insert(RBTreeNode<value_type>*);
 		void rebalance_erase(RBTreeNode<value_type>*);
-		void copy(RBTreeNode<value_type>*);
+		RBTreeNode<value_type>* copy(RBTreeNode<value_type>*);
 
-		iterator insert(RBTreeNode<value_type>*, RBTreeNode<value_type>*, const value_type&);
+		iterator insert(RBTreeNode<value_type>*, const value_type&);
 
 	public:
 		RBTree() : header(nullptr), node_count(0), comp()
@@ -334,21 +334,41 @@ namespace grtw
 		size_type size() const { return node_count; }
 
 		iterator insert_equal(const value_type& v);
-		iterator insert_equal(const_iterator, const_iterator);
-		iterator insert_equal(const value_type*, const value_type*);
+		void insert_equal(const_iterator, const_iterator);
+		void insert_equal(const value_type*, const value_type*);
+
 		pair<iterator, bool> insert_unique(const value_type& v);
-		pair<iterator, bool> insert_unique(const_iterator, const_iterator);
-		pair<iterator, bool> insert_unique(const value_type*, const value_type*);
+		void insert_unique(const_iterator, const_iterator);
+		void insert_unique(const value_type*, const value_type*);
+
 		void erase(iterator);
 		void erase(iterator, iterator);
-		void erase(const Key&);
-		void erase(const Key&, const Key&);
+		size_type erase(const Key&);
+		void erase(const Key*, const Key*);
 		void clear();
 
 		iterator find(const Key&);
 		const_iterator find(const Key&) const;
-		size_type count(const Key&);
+		size_type count(const Key&) const;
+		iterator lower_bound(const Key&);
+		const_iterator lower_bound(const Key&) const;
+		iterator upper_bound(const Key&);
+		const_iterator upper_bound(const Key&) const;
+		pair<iterator, iterator> equal_range(const Key&);
+		pair<const_iterator, const_iterator> equal_range(const Key&) const;
 	};
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	RBTreeNode<typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::value_type>*
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::copy(RBTreeNode<value_type>* other_root)
+	{
+		RBTreeNode<value_type>* my_root = clone_node(other_root);
+		if(other_root->right)
+			my_root->right = copy(other_root->right);
+		if(other_root->left)
+			my_root->left = copy(other_root->left);
+		return my_root;
+	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_insert(RBTreeNode<value_type>* node)
@@ -410,7 +430,8 @@ namespace grtw
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
-	RBTreeNode<Value>* RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_erase(RBTreeNode<value_type>* node)
+	RBTreeNode<typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::value_type>*
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::rebalance_erase(RBTreeNode<value_type>* node)
 	{
 		RBTreeNode<value_type>* to_erase = node;
 		RBTreeNode<value_type>* to_fillin = nullptr;
@@ -601,9 +622,33 @@ namespace grtw
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator
-	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert(RBTreeNode<value_type>* add_here, RBTreeNode<value_type>* its_parent, const value_type& v)
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert(RBTreeNode<value_type>* its_parent, const value_type& v)
 	{
-		if(its_parent == header || add_here != nullptr || )
+		RBTreeNode<value_type>* z = create_node(v);
+		if(its_parent == header)
+		{
+			its_parent->parent = z;
+			its_parent->left = z;
+			its_parent->right = z;
+		}
+		else if(comp(KeyOfValue(v), getKeyOfValue(its_parent)))
+		{
+			its_parent->left = z;
+			if(its_parent == leftmost())
+				header->left = z;
+		}
+		else
+		{
+			its_parent->right = z;
+			if(its_parent == rightmost())
+				header->right = z;
+		}
+		z->parent = its_parent;
+		z->left = nullptr;
+		z->right = nullptr;
+		rebalance_insert(z);
+		++node_count;
+		return iterator(z);
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
@@ -617,7 +662,21 @@ namespace grtw
 			p = c;
 			c = comp(KeyOfValue()(v), getKeyOfValue(c)) ? c->left : c->right;
 		}
-		return insert(c, p, v);
+		return insert(p, v);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_equal(const value_type* vfirst, const value_type* vlast)
+	{
+		for(; vfirst != vlast; ++vfirst)
+			insert_equal(*vfirst);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_equal(const_iterator vfirst, const_iterator vlast)
+	{
+		for(; vfirst != vlast; ++vfirst)
+			insert_equal(*vfirst);
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
@@ -634,8 +693,165 @@ namespace grtw
 		iterator it = iterator(p);
 		if(comp(KeyOfValue()(v), getKeyOfValue(p)))
 		{
-			return pair<iterator, bool>(insert(c, p, v), true);
+			if(it == begin())
+				return pair<iterator, bool>(insert(p, v), true);
+			else
+				--it;
 		}
+		if(comp(KeyOfValue(j.getNative()), KeyOfValue(v)))
+			return pair<insert(p, v), true>
+		else
+			return pair<it, false>;
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_unique(const value_type* vfirst, const value_type* vlast)
+	{
+		for(; vfirst != vlast; ++vfirst)
+			insert_unique(*vfirst);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::insert_unique(const_iterator vfirst, const_iterator vlast)
+	{
+		for(; vfirst != vlast; ++vfirst)
+			insert_unique(*vfirst);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator
+	lower_bound(const Key& k)
+	{
+		RBTreeNode<value_type>* p = header;
+		RBTreeNode<value_type>* c = header->parent;
+		while(c != nullptr)
+		{
+			if(!comp(getKeyOfValue(c), k))
+			{
+				p = c;
+				c = c->left;
+			}
+			else
+				c = c->right;
+		}
+		return iterator(p);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::const_iterator
+	lower_bound(const Key& k) const
+	{
+		RBTreeNode<value_type>* p = header;
+		RBTreeNode<value_type>* c = header->parent;
+		while(c != nullptr)
+		{
+			if(!comp(getKeyOfValue(c), k))
+			{
+				p = c;
+				c = c->left;
+			}
+			else
+				c = c->right;
+		}
+		return const_iterator(p);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator
+	upper_bound(const Key& k)
+	{
+		RBTreeNode<value_type>* p = header;
+		RBTreeNode<value_type>* c = header->parent;
+		while(c != nullptr)
+		{
+			if(comp(k, getKeyOfValue(c)))
+			{
+				p = c;
+				c = c->left;
+			}
+			else
+				c = c->right;
+		}
+		return iterator(p);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::const_iterator
+	upper_bound(const Key& k) const
+	{
+		RBTreeNode<value_type>* p = header;
+		RBTreeNode<value_type>* c = header->parent;
+		while(c != nullptr)
+		{
+			if(comp(k, getKeyOfValue(c)))
+			{
+				p = c;
+				c = c->left;
+			}
+			else
+				c = c->right;
+		}
+		return const_iterator(p);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	pair<typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator, typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator>
+	equal_range(const Key& k)
+	{
+		return pair<iterator, iterator>(lower_bound(k), upper_bound(k));
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	pair<typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator, typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator>
+	equal_range(const Key&); const
+	{
+		return pair<const_iterator, const_iterator>(lower_bound(k), upper_bound(k));
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::size_type
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::count(const Key& k) const
+	{
+		pair<const_iterator, const_iterator> p = equal_range(k);
+		size_type c = 0;
+		distance(p.first, p.second, c);
+		return c;
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::erase(iterator it)
+	{
+		RBTreeNode<value_type>* erased = rebalance_erase(getNative(it));
+		destroy_node(erased);
+		--node_count;
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::erase(iterator itfirst, iterator itlast)
+	{
+		if(itfirst == begin() && itlast == end())
+			clear();
+		else
+			while(itfirst != itlast)
+				erase(itfirst);
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::size_type
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::erase(const Key& k)
+	{
+		pair<iterator, iterator> p = equal_range(k);
+		size_type c = 0;
+		distance(p.first, p.second, c);
+		erase(p.first, p.second);
+		return c;
+	}
+
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
+	void RBTree<Key, Value, KeyOfValue, Compare, Alloc>::erase(const Key* k1, const Key* k2)
+	{
+		while(k1 != k2)
+			erase(*k1++);
 	}
 }
 
