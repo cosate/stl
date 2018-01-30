@@ -1,5 +1,5 @@
-#ifndef GRTW_STL_TREE_H
-#define GRTW_STL_TREE_H
+#ifndef GRTW_STL_RBTREE_H
+#define GRTW_STL_RBTREE_H
 
 #include"stl_algorithms.h"
 #include"stl_allocator.h"
@@ -310,16 +310,48 @@ namespace grtw
 			else
 			{
 				header->color = rb_tree_red;
-				header->parent = copy(RBTreeNode<value_type>* other.header);
+				header->parent = copy((other.header)->parent);
 				header->left = minimum();
 				header->right = maximum();
 			}
 			node_count = other.node_count;
 		}
 
-		RBTree<T, Compare, Alloc>& operator=(const RBTree<T, Compare, Alloc>&);
+		RBTree<T, Compare, Alloc>& operator=(const RBTree<T, Compare, Alloc>& other)
+		{
+			if(this != &other)
+			{
+				clear();
+				node_count = 0;
+				comp = other.comp;
+				if(other.header->parent == nullptr)
+				{
+					header->parent = nullptr;
+					header->left = header;
+					header->right = header;
+				}
+				else
+				{
+					header->parent = copy((other.header)->parent);
+					header->left = minimum();
+					header->right = maximum();
+					node_count = other.node_count;
+				}
+			}
+			return *this;
+		}
 
 		~RBTree() { clear(); }
+
+		bool operator==(const RBTreeNode<Key, Value, KeyOfValue, Compare, Alloc>& other)
+		{
+			return size() == other.size() && equal(begin(), end(), other.begin())
+		}
+
+		bool operator!=(const RBTreeNode<Key, Value, KeyOfValue, Compare, Alloc>& other)
+		{
+			return !((*this) == other);
+		}
 
 		iterator begin() { return leftmost(); }
 		iterator end() { return header; }
@@ -364,9 +396,15 @@ namespace grtw
 	{
 		RBTreeNode<value_type>* my_root = clone_node(other_root);
 		if(other_root->right)
+		{
 			my_root->right = copy(other_root->right);
+			my_root->right->parent = my_root;
+		}
 		if(other_root->left)
+		{
 			my_root->left = copy(other_root->left);
+			my_root->left->parent = my_root;
+		}
 		return my_root;
 	}
 
