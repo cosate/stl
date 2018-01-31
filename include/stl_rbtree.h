@@ -139,7 +139,7 @@ namespace grtw
 		}
 	};
 
-	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc = allocator<RBTreeNode<T>>>
+	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc = allocator<RBTreeNode<Value>>>
 	class RBTree
 	{
 	public:
@@ -352,6 +352,8 @@ namespace grtw
 		{
 			return !((*this) == other);
 		}
+
+		Compare key_comp() const { return comp; }
 
 		iterator begin() { return leftmost(); }
 		iterator end() { return header; }

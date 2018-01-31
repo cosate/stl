@@ -12,7 +12,7 @@ namespace grtw
 	template<class T, class Sequence = deque<T>>
 	class stack
 	{
-
+		
 	};
 }
 
