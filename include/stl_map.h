@@ -11,12 +11,9 @@ namespace grtw
 	template<class Key, class T, class Compare = less<Key>, class Alloc = allocator<pair<const Key, T>>>
 	class map
 	{
-	public:
-		using value_type = pair<const Key, T>;
-
 	private:
+		using value_type = pair<const Key, T>;
 		using repo_type = RBTree<Key, value_type, select1st<value_type>, Compare, Alloc>;
-		repo_type repository;
 
 	public:
 		using pointer = typename repo_type::pointer;
@@ -29,6 +26,9 @@ namespace grtw
 		using const_reverse_iterator = typename repo_type::const_reverse_iterator;
 		using size_type = typename repo_type::size_type;
 		using difference_type = typename repo_type::difference_type;
+
+	private:
+		repo_type repository;
 
 	public:
 		map();
