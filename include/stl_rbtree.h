@@ -302,7 +302,7 @@ namespace grtw
 			empty_initialize();
 		}
 
-		RBTree(const RBTree<T, Compare, Alloc>& other)
+		RBTree(const RBTree<Key, Value, KeyOfValue, Compare, Alloc>& other) : header(nullptr), node_count(0), comp(other.comp)
 		{
 			header = Alloc::allocate(1);
 			if(other.node_count == 0)
@@ -317,7 +317,7 @@ namespace grtw
 			node_count = other.node_count;
 		}
 
-		RBTree<T, Compare, Alloc>& operator=(const RBTree<T, Compare, Alloc>& other)
+		RBTree<Key, Value, KeyOfValue, Compare, Alloc>& operator=(const RBTree<Key, Value, KeyOfValue, Compare, Alloc>& other)
 		{
 			if(this != &other)
 			{
@@ -760,7 +760,7 @@ namespace grtw
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator
-	lower_bound(const Key& k)
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::lower_bound(const Key& k)
 	{
 		RBTreeNode<value_type>* p = header;
 		RBTreeNode<value_type>* c = header->parent;
@@ -779,7 +779,7 @@ namespace grtw
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::const_iterator
-	lower_bound(const Key& k) const
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::lower_bound(const Key& k) const
 	{
 		RBTreeNode<value_type>* p = header;
 		RBTreeNode<value_type>* c = header->parent;
@@ -798,7 +798,7 @@ namespace grtw
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator
-	upper_bound(const Key& k)
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::upper_bound(const Key& k)
 	{
 		RBTreeNode<value_type>* p = header;
 		RBTreeNode<value_type>* c = header->parent;
@@ -817,7 +817,7 @@ namespace grtw
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::const_iterator
-	upper_bound(const Key& k) const
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::upper_bound(const Key& k) const
 	{
 		RBTreeNode<value_type>* p = header;
 		RBTreeNode<value_type>* c = header->parent;
@@ -836,14 +836,14 @@ namespace grtw
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	pair<typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator, typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator>
-	equal_range(const Key& k)
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::equal_range(const Key& k)
 	{
 		return pair<iterator, iterator>(lower_bound(k), upper_bound(k));
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
 	pair<typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator, typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator>
-	equal_range(const Key&); const
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::equal_range(const Key&); const
 	{
 		return pair<const_iterator, const_iterator>(lower_bound(k), upper_bound(k));
 	}
