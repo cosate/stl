@@ -51,7 +51,7 @@ namespace grtw
 
 		RBTree_iterator(const iterator& x) : node(x.getNative()) {}
 
-		RBTreeNode<T>* getNative() { return node; }
+		RBTreeNode<T>* getNative() const { return node; }
 
 		reference operator*() const { return node->value; }
 

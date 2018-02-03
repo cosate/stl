@@ -89,6 +89,15 @@ namespace grtw
 			return x.second;
 		}
 	};
+
+	template<class T>
+	struct identity : public unary_function<T, T>
+	{
+		const T& operator()(const T& x) const
+		{
+			return x;
+		}
+	};
 }
 
 #endif
