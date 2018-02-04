@@ -59,7 +59,7 @@ namespace grtw
 
 		RBTree_iterator& operator=(const iterator& other)
 		{
-			node = other.node;
+			node = other.getNative();
 			return *this;
 		}
 
@@ -89,9 +89,9 @@ namespace grtw
 			return tmp;
 		}
 
-		bool operator==(const RBTree_iterator& other) { return node == other.node; }
+		bool operator==(const RBTree_iterator& other) { return node == other.getNative(); }
 
-		bool operator!=(const RBTree_iterator& other) { return node != other.node; }
+		bool operator!=(const RBTree_iterator& other) { return node != other.getNative(); }
 
 	private:
 		void increment()
@@ -302,19 +302,19 @@ namespace grtw
 			empty_initialize();
 		}
 
-		RBTree(const RBTree<Key, Value, KeyOfValue, Compare, Alloc>& other) : header(nullptr), node_count(0), comp(other.comp)
+		RBTree(const RBTree<Key, Value, KeyOfValue, Compare, Alloc>& other) : header(nullptr), node_count(0), comp(other.key_comp())
 		{
 			header = Alloc::allocate(1);
-			if(other.node_count == 0)
+			if(other.size() == 0)
 				empty_initialize();
 			else
 			{
 				header->color = rb_tree_red;
-				header->parent = copy((other.header)->parent);
+				header->parent = copy((other.get_header())->parent);
 				header->left = minimum();
 				header->right = maximum();
 			}
-			node_count = other.node_count;
+			node_count = other.size();
 		}
 
 		RBTree<Key, Value, KeyOfValue, Compare, Alloc>& operator=(const RBTree<Key, Value, KeyOfValue, Compare, Alloc>& other)
@@ -323,8 +323,8 @@ namespace grtw
 			{
 				clear();
 				node_count = 0;
-				comp = other.comp;
-				if(other.header->parent == nullptr)
+				comp = other.key_comp();
+				if((other.get_header())->parent == nullptr)
 				{
 					header->parent = nullptr;
 					header->left = header;
@@ -332,10 +332,10 @@ namespace grtw
 				}
 				else
 				{
-					header->parent = copy((other.header)->parent);
+					header->parent = copy((other.get_header())->parent);
 					header->left = minimum();
 					header->right = maximum();
-					node_count = other.node_count;
+					node_count = other.size();
 				}
 			}
 			return *this;
@@ -354,6 +354,7 @@ namespace grtw
 		}
 
 		Compare key_comp() const { return comp; }
+		RBTreeNode<value_type>* get_header() const { return header; }
 
 		iterator begin() { return leftmost(); }
 		iterator end() { return header; }

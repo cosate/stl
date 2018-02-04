@@ -34,7 +34,9 @@ namespace grtw
 		map() : repository(Compare()) {}
 		explicit map(const Compare& comp) : repository(comp) {}
 		map(const value_type* vfirst, const value_type* vlast) : repository(Compare()) { repository.insert_unique(vfirst, vlast); }
+		map(const value_type* vfirst, const value_type* vlast, const Compare& comp) : repository(comp) { repository.insert_unique(vfirst, vlast); }
 		map(const_iterator vfirst, const_iterator vlast) : repository(Compare()) { repository.insert_unique(vfirst, vlast); }
+		map(const_iterator vfirst, const_iterator vlast, const Compare& comp) : repository(comp) { repository.insert_unique(vfirst, vlast); }
 		map(const map<Key, Value, Compare, Alloc>& other) : repository(other.repository) {}
 		map<Key, Value, Compare, Alloc>& operator=(const map<Key, Value, Compare, Alloc>& other)
 		{
