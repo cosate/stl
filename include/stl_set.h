@@ -37,6 +37,7 @@ namespace grtw
 		set(const value_type* vfirst, const value_type* vlast, const Compare& comp) : repository(comp) { repository.insert_unique(vfirst, vlast); }
 		set(const_iterator vfirst, const_iterator vlast) : repository(Compare()) { repository.insert_unique(vfirst, vlast); }
 		set(const_iterator vfirst, const_iterator vlast, const Compare& comp) : repository(comp) { repository.insert_unique(vfirst, vlast); }
+		set(const set<Key, Compare, Alloc>& other) : repository(other.repository) {}
 		set<Key, Compare, Alloc>& operator=(const set<Key, Compare, Alloc>& other)
 		{
 			repository = other.repository;
