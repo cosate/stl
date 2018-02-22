@@ -34,7 +34,7 @@ namespace grtw
 	}
 
 	template<class RandomAccessIterator, class Compare>
-	void make_heap(RandomAccessIterator vfirst, RandomAccessIterator vlast, Compare comp)
+	void pop_heap(RandomAccessIterator vfirst, RandomAccessIterator vlast, Compare comp)
 	{
 		
 	}
