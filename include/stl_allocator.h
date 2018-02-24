@@ -44,7 +44,7 @@ namespace grtw
 	template<class T>
 	void allocator<T>::deallocate(T* p)
 	{
-		default_alloc::deallocate(static_cast<void*>p, sizeof(T));
+		default_alloc::deallocate(static_cast<void*>(p), sizeof(T));
 	}
 
 	template<class T>
@@ -52,19 +52,19 @@ namespace grtw
 	{
 		if(n == 0)
 			return;
-		default_alloc::deallocate(static_cast<void*>p, sizeof(T) * n);
+		default_alloc::deallocate(static_cast<void*>(p), sizeof(T) * n);
 	}
 
 	template<class T>
 	void allocator<T>::construct(T* p)
 	{
-		new p T();
+		new (p) T();
 	}
 
 	template<class T>
 	void allocator<T>::construct(T* p, const T& v)
 	{
-		new p T(v);
+		new (p) T(v);
 	}
 
 	template<class T>

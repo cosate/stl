@@ -176,7 +176,7 @@ namespace grtw
 		using is_POD_type = true_type;
 	};
 
-	template<T>
+	template<class T>
 	struct type_traits<T*>
 	{
 		using has_trivial_constructor = true_type;
@@ -210,7 +210,6 @@ namespace grtw
 	struct Is_integer<signed char>
 	{
 		using Integral = true_type;
-	}
 	};
 
 	template<>

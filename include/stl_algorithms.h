@@ -41,8 +41,8 @@ namespace grtw
 	{
 		static OutputIterator copy(InputIterator first, InputIterator last, OutputIterator dest)
 		{
-			using Cat = typename iterator_traits<Iterator>::iterator_category;
-			return __copy(fisrt, last, dest, iterator_category(first));
+			using Cat = typename iterator_traits<InputIterator>::iterator_category;
+			return __copy(first, last, dest, iterator_category(first));
 		}
 	};
 
@@ -68,7 +68,7 @@ namespace grtw
 	inline OutputIterator copy(InputIterator first, InputIterator last, OutputIterator dest)
 	{
 		using Val = typename iterator_traits<InputIterator>::value_type;
-		using Triv = typename type_traits<Val>::has_trivial_assignment_operator;
+		using Triv = typename type_traits<Val>::has_assignment_operator;
 		return copy_dispatch<InputIterator, OutputIterator, Triv>::copy(first, last, dest);
 	}
 
@@ -124,7 +124,7 @@ namespace grtw
 	inline BI2 copy_backward(BI1 first, BI1 last, BI2 dest)
 	{
 		using Val = typename iterator_traits<BI2>::value_type;
-		using Triv = typename type_traits<Val>::has_trivial_assignment_operator;
+		using Triv = typename type_traits<Val>::has_assignment_operator;
 		return copy_backward_dispatch<BI1, BI2, Triv>::copy(first, last, dest);
 	}
 

@@ -149,8 +149,8 @@ namespace grtw
 
 		using iterator = deque_iterator<value_type, reference, pointer, BufferSize()>;
 		using const_iterator = deque_iterator<value_type, const_reference, const_pointer, BufferSize()>;
-		using reverse_iterator = reverse_iterator<iterator>;
-		using const_reverse_iterator = reverse_iterator<const_iterator>;
+		using reverse_iterator = Reverse_iterator<iterator>;
+		using const_reverse_iterator = Reverse_iterator<const_iterator>;
 
 	private:
 		value_type** node_map;

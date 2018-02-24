@@ -4,6 +4,7 @@
 #include<cstring>
 #include"stl_algorithms.h"
 #include"stl_construct.h"
+#include"type_traits.h"
 
 namespace grtw
 {
@@ -26,8 +27,8 @@ namespace grtw
 	template<class InputIterator, class ForwardIterator, class T>
 	inline ForwardIterator _uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator dest, T*)
 	{
-		using IS_POD = type_traits<T>::is_POD_type;
-		return __uninitialized_copy(InputIterator first, InputIterator last, ForwardIterator dest, IS_POD());
+		using IS_POD = typename type_traits<T>::is_POD_type;
+		return __uninitialized_copy(first, last, dest, IS_POD());
 	}
 
 	template<class InputIterator, class ForwardIterator>
@@ -66,7 +67,7 @@ namespace grtw
 	template <class ForwardIterator, class T, class T1>
 	inline void __uninitialized_fill(ForwardIterator first, ForwardIterator last, const T& x, T1*)
 	{
-		using IS_POD = typename __type_traits<T1>::is_POD_type;
+		using IS_POD = typename type_traits<T1>::is_POD_type;
 		__uninitialized_fill_aux(first, last, x, IS_POD());               
 	}
 
@@ -95,7 +96,7 @@ namespace grtw
 	template <class ForwardIterator, class _Size, class T, class T1>
 	inline ForwardIterator __uninitialized_fill_n(ForwardIterator first, _Size n, const T& x, T1*)
 	{
-		using IS_POD = typename __type_traits<T1>::is_POD_type;
+		using IS_POD = typename type_traits<T1>::is_POD_type;
 		return __uninitialized_fill_n_aux(first, n, x, IS_POD());
 	}
 

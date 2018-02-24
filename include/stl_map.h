@@ -45,13 +45,13 @@ namespace grtw
 		}
 
 		iterator begin() { return repository.begin(); }
-		const_iterator begin() { return repository.begin(); }
+		const_iterator begin() const { return repository.begin(); }
 		iterator end() { return repository.end(); }
-		const_iterator end() { return repository.end(); }
+		const_iterator end() const { return repository.end(); }
 		reverse_iterator rbegin() { return repository.rbegin(); }
-		const_reverse_iterator rbegin() { return repository.rbegin(); }
+		const_reverse_iterator rbegin() const { return repository.rbegin(); }
 		reverse_iterator rend() { return repository.rend(); }
-		const_reverse_iterator rend() { return repository.rend(); }
+		const_reverse_iterator rend() const { return repository.rend(); }
 		bool empty() { return repository.empty(); }
 		size_type size() { return repository.size(); }
 

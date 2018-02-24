@@ -10,7 +10,7 @@ namespace grtw
 	template<class T1, class T2>
 	inline void construct(T1* p, T2& value)
 	{
-		new ((void*)p) (T1)value;
+		new ((void*)p) (T1)(value);
 	}
 
 	template<class T>
@@ -27,19 +27,6 @@ namespace grtw
 	}
 
 	template<class Iterator>
-	void destroy(Iterator first, Iterator last)
-	{
-		_destroy(first, last, value_type(first));
-	}
-
-	template<class Iterator, class T>
-	void _destroy(Iterator first, Iterator last, T*)
-	{
-		using trivial_destructor = type_traits<T>::has_trivial_destructor;
-		__destroy(first, last, trivial_destructor());
-	}
-
-	template<class Iterator>
 	void __destroy(Iterator first, Iterator last, false_type)
 	{
 		for(; first != last; first++)
@@ -49,6 +36,19 @@ namespace grtw
 	template<class Iterator>
 	void __destroy(Iterator first, Iterator last, true_type)
 	{}
+
+	template<class Iterator, class T>
+	void _destroy(Iterator first, Iterator last, T*)
+	{
+		using trivial_destructor = typename type_traits<T>::has_trivial_destructor;
+		__destroy(first, last, trivial_destructor());
+	}
+
+	template<class Iterator>
+	void destroy(Iterator first, Iterator last)
+	{
+		_destroy(first, last, value_type(first));
+	}
 }
 
 #endif

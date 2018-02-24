@@ -31,7 +31,7 @@ namespace grtw
 	class RBTree_iterator
 	{
 	public:
-		using iterator_category = bidireactional_iterator_tag;
+		using iterator_category = bidirectional_iterator_tag;
 		using difference_type = ptrdiff_t;
 		using value_type = T;
 		using reference = Reference;
@@ -153,8 +153,8 @@ namespace grtw
 
 		using iterator = RBTree_iterator<value_type, reference, pointer>;
 		using const_iterator = RBTree_iterator<value_type, const_reference, const_pointer>;
-		using reverse_iterator = reverse_iterator<iterator>;
-		using const_reverse_iterator = reverse_iterator<const_iterator>;
+		using reverse_iterator = Reverse_iterator<iterator>;
+		using const_reverse_iterator = Reverse_iterator<const_iterator>;
 
 	private:
 		RBTreeNode<value_type>* header;
@@ -284,7 +284,7 @@ namespace grtw
 		}
 
 		void rebalance_insert(RBTreeNode<value_type>*);
-		void rebalance_erase(RBTreeNode<value_type>*);
+		RBTreeNode<value_type>* rebalance_erase(RBTreeNode<value_type>*);
 		RBTreeNode<value_type>* copy(RBTreeNode<value_type>*);
 
 		iterator insert(RBTreeNode<value_type>*, const value_type&);
@@ -343,12 +343,12 @@ namespace grtw
 
 		~RBTree() { clear(); }
 
-		bool operator==(const RBTreeNode<Key, Value, KeyOfValue, Compare, Alloc>& other)
+		bool operator==(const RBTree<Key, Value, KeyOfValue, Compare, Alloc>& other)
 		{
-			return size() == other.size() && equal(begin(), end(), other.begin())
+			return size() == other.size() && equal(begin(), end(), other.begin());
 		}
 
-		bool operator!=(const RBTreeNode<Key, Value, KeyOfValue, Compare, Alloc>& other)
+		bool operator!=(const RBTree<Key, Value, KeyOfValue, Compare, Alloc>& other)
 		{
 			return !((*this) == other);
 		}
@@ -516,7 +516,7 @@ namespace grtw
 			else
 				to_fillin_parent = to_erase;
 			to_erase->parent = node->parent;
-			if(node == header-->parent)
+			if(node == header->parent)
 				header->parent = to_erase;
 			else if(node->parent->left == node)
 				node->parent->left = to_erase;
@@ -739,10 +739,10 @@ namespace grtw
 			else
 				--it;
 		}
-		if(comp(KeyOfValue(j.getNative()), KeyOfValue(v)))
-			return pair<insert(p, v), true>
+		if(comp(KeyOfValue(it.getNative()), KeyOfValue(v)))
+			return pair<iterator, bool>(insert(p, v), true);
 		else
-			return pair<it, false>;
+			return pair<iterator, bool>(it, false);
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
@@ -843,8 +843,8 @@ namespace grtw
 	}
 
 	template<class Key, class Value, class KeyOfValue, class Compare, class Alloc>
-	pair<typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator, typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::iterator>
-	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::equal_range(const Key&); const
+	pair<typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::const_iterator, typename RBTree<Key, Value, KeyOfValue, Compare, Alloc>::const_iterator>
+	RBTree<Key, Value, KeyOfValue, Compare, Alloc>::equal_range(const Key& k) const
 	{
 		return pair<const_iterator, const_iterator>(lower_bound(k), upper_bound(k));
 	}

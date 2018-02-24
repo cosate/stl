@@ -17,8 +17,8 @@ namespace grtw
 		using pointer = T*;
 		using iterator = T*;
 		using const_iterator = const T*;
-		using reverse_iterator = reverse_iterator<iterator>;
-		using const_reverse_iterator = reverse_iterator<const_iterator>;
+		using const_reverse_iterator = Reverse_iterator<const_iterator>;
+		using reverse_iterator = Reverse_iterator<iterator>;
 		using reference = T&;
 		using const_reference = const T&;
 		using size_type = size_t;
@@ -47,7 +47,7 @@ namespace grtw
 			allocate_fill(n, T());
 		}
 
-		vector(size_type, const T& v)
+		vector(size_type n, const T& v)
 		{
 			allocate_fill(n, v);
 		}

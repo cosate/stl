@@ -61,7 +61,7 @@ namespace grtw
 
 		while(1)
 		{
-			my_malloc_handler = malloc_alloc_oom_handler;
+			oomh* my_malloc_handler = malloc_alloc_oom_handler;
 			if(nullptr == my_malloc_handler)
 			{
 				throw std::bad_alloc();
@@ -122,7 +122,7 @@ namespace grtw
 
 	char* default_alloc::start_free = nullptr;
 	char* default_alloc::end_free = nullptr;
-	size_t heap_size = 0;
+	size_t default_alloc::heap_size = 0;
 	default_alloc::obj* default_alloc::free_lists[NFREELISTS] = {nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr,nullptr};
 
 	size_t default_alloc::round_up(size_t bytes)
@@ -166,7 +166,7 @@ namespace grtw
 		else
 		{
 			int index = free_list_index(n);
-			obj* ptr = static_cast<obj*>p;
+			obj* ptr = static_cast<obj*>(p);
 			ptr->next = free_lists[index];
 			free_lists[index] = ptr;
 		}
@@ -246,7 +246,7 @@ namespace grtw
 					if(free_lists[ind] != nullptr)
 					{
 						free_lists[ind] = free_lists[ind]->next;
-						start_free = (char*)p;
+						start_free = (char*)(free_lists[ind]);
 						end_free = start_free + i;
 						return chunk_alloc(bytes, n);
 					}
