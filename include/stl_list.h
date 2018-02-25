@@ -31,14 +31,13 @@ namespace grtw
 		using const_iterator = List_iterator<T, const T&, const T*>;
 		using self = List_iterator<T, Reference, Pointer>;
 
-	private:
+	public:
 		ListNode<value_type>* node;
 	public:
 		List_iterator() {}
 		List_iterator(ListNode<value_type>* x) : node(x) {}
-		List_iterator(const iterator& x) : node(x.getNative()) {}
+		List_iterator(const iterator& x) : node(x.node) {}
 
-		ListNode<value_type>* getNative() const { return node; }
 		reference operator*() const { return node->data; }
 		pointer operator->() const { return &(operator*()); }
 		self& operator++()
@@ -137,8 +136,29 @@ namespace grtw
 			insert(begin(), other.begin(), other.end());
 		}
 
-		list<value_type, Alloc>& operator=(const list<value_type, Alloc>&);
-		~list();
+		list<value_type, Alloc>& operator=(const list<value_type, Alloc>& other)
+		{
+			if(this != &other)
+			{
+				iterator first1 = begin();
+				iterator last1 = end();
+				const_iterator first2 = other.begin();
+				const_iterator last2 = other.end();
+				while(first1 != last1 && first2 != last2)
+					*first1++ =  *first2++;
+				if(first2 == last2)
+					erase(first1, last1);
+				else
+					insert(last1, first2, last2);
+			}
+			return *this;
+		}
+
+		~list()
+		{
+			clear();
+			Alloc::deallocate(head);
+		}
 		
 		iterator begin() { return head->next; }
 		const_iterator begin() const { return head->next; }
@@ -164,24 +184,107 @@ namespace grtw
 
 		iterator insert(iterator position, const value_type& v)
 		{
-			
+			ListNode<value_type>* tmp = Alloc::allocator(1);
+			construct(&(tmp->data), v);
+			tmp->next = position.node;
+			tmp->prev = position.node->prev;
+			position.node->prev->next = tmp;
+			position.node->prev = tmp;
+			return tmp;
 		}
-		void insert(iterator, const value_type*, const value_type*);
-		void insert(iterator, const_iterator, const_iterator);
-		void insert(iterator, size_type, const value_type&);
-		void push_front(const value_type&);
-		void push_back(const value_type&);
 
-		iterator erase(iterator);
-		iterator erase(iterator, iterator);
-		void clear();
-		void resize(size_type);
-		void resize(size_type, const value_type&);
-		void pop_front();
-		void pop_back();
+		void insert(iterator position, const value_type* vfirst, const value_type* vlast)
+		{
+			for(; vfirst != vlast; ++vfirst)
+				insert(position, *vfirst);
+		}
 
-		bool operator==(const list<value_type, Alloc>&);
-		bool operator!=(const list<value_type, Alloc>&);
+		void insert(iterator position, const_iterator vfirst, const_iterator vlast)
+		{
+			for(; vfirst != vlast; ++vfirst)
+				insert(position, *vfirst);
+		}
+
+		void insert(iterator position, size_type n, const value_type& v)
+		{
+			for(; n > 0; --n)
+				insert(position, v);
+		}
+
+		void push_front(const value_type& x) { insert(begin(), x); }
+		void push_back(const value_type&) { insert(end(), x); }
+
+		iterator erase(iterator position)
+		{
+			ListNode<value_type>* next_node = position.node->next;
+			ListNode<value_type>* prev_node = position.node->prev;
+			ListNode<value_type>* n = position.node;
+			prev_node->next = next_node;
+			next_node->prev = prev_node;
+			destroy(n);
+			Alloc::deallocate(n);
+			return next_node;
+		}
+
+		iterator erase(iterator vfirst, iterator vlast)
+		{
+			while(vfirst != vlast)
+				erase(vfirst++);
+			return vlast;
+		}
+
+		void clear()
+		{
+			ListNode<value_type>* current = head->next;
+			while(current != head)
+			{
+				ListNode<value_type>* tmp = current;
+				current = current->next;
+				destroy(tmp);
+				Alloc::deallocate(tmp);
+			}
+			head->next = head;
+			head->prev = head;
+		}
+
+		void resize(size_type new_size, const value_type& v)
+		{
+			iterator i = begin();
+			size_type len = 0;
+			for(; i != end() && len < new_size; ++i, ++len)
+				;
+			if(len == new_size)
+				erase(i, end());
+			else
+				insert(end(), new_size - len, v);
+		}
+
+		void resize(size_type new_size) {resize(new_size, value_type()); }
+		void pop_front() { erase(begin()); }
+		void pop_back()
+		{
+			iterator tmp = end();
+			erase(--tmp);
+		}
+
+		bool operator==(const list<value_type, Alloc>& other)
+		{
+			const_iterator end1 = end();
+			const_iterator end2 = other.end();
+			const_iterator i1 = begin();
+			const_iterator i2 = other.begin();
+			while(i1 != end1 && i2 != end2 && *i1 == *i2)
+			{
+				++i1;
+				++i2;
+			}
+			return it == end1 && i2 == end2;
+		}
+
+		bool operator!=(const list<value_type, Alloc>& other)
+		{
+			return !(*(this) == other);
+		}
 	};
 }
 
