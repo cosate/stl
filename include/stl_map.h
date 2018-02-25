@@ -8,7 +8,7 @@
 
 namespace grtw
 {
-	template<class Key, class Value, class Compare = less<Key>, class Alloc = allocator<pair<const Key, Value>>>
+	template<class Key, class Value, class Compare = less<Key>, class Alloc = allocator<RBTreeNode<pair<const Key, Value> > > >
 	class map
 	{
 	private:
@@ -59,7 +59,7 @@ namespace grtw
 		{
 			iterator i = lower_bound(k);
 			if(i == end() || repository.key_comp()(k, (*i).first))
-				i = insert(value_type(k, Value()));
+				i = insert(value_type(k, Value())).first;
 			return (*i).second;
 		}
 

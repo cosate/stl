@@ -672,7 +672,7 @@ namespace grtw
 			its_parent->left = z;
 			its_parent->right = z;
 		}
-		else if(comp(KeyOfValue(v), getKeyOfValue(its_parent)))
+		else if(comp(KeyOfValue()(v), getKeyOfValue(its_parent)))
 		{
 			its_parent->left = z;
 			if(its_parent == leftmost())
@@ -739,7 +739,7 @@ namespace grtw
 			else
 				--it;
 		}
-		if(comp(KeyOfValue(it.getNative()), KeyOfValue(v)))
+		if(comp(getKeyOfValue(it.getNative()), KeyOfValue()(v)))
 			return pair<iterator, bool>(insert(p, v), true);
 		else
 			return pair<iterator, bool>(it, false);
